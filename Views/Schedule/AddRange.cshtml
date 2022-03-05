@@ -1,0 +1,178 @@
+﻿<html>
+<head>
+    <link rel="stylesheet" href="~/css/styles.css" type="text/css" />
+    <link rel="stylesheet" href="~/css/vanilla-calendar.css" type="text/css" />
+    <script src="~/js/jquery-3.5.1.min.js"></script>
+    <script src="~/js/AddRange.js"></script>
+</head>
+<body style="margin-bottom:0px">
+    <form>
+        <div style="text-align: center; font-size: 25px; font-weight: bold">Adding shifts.</div>
+        <br />
+        <table width="100%">
+            <tr>
+                <td width="25%" style="text-align:center">
+                    <input type="date" name="rangeBefore" id="rangeBefore"
+                           min="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="{ ChangeDate(); BlockChangeDate(true); }" />
+                </td>
+                <td width="25%" style="text-align:center">
+                    <input type="date" name="rangeAfter" id="rangeAfter"
+                           max="@(new DateTime(DateTime.Today.AddMonths(3).Year, DateTime.Today.AddMonths(3).Month, 1).AddDays(-1).ToString("yyyy-MM-dd"))" onchange="{ ChangeDate(); BlockChangeDate(false); }" />
+                </td>
+                <td width="25%" style="text-align:center">
+                    <p><input type="checkbox" name="Saturday" id="saturdayid" onclick="ChangeDate()" /> Saturday</p>
+                </td>
+                <td width="25%" style="text-align:center">
+                    <p><input type="checkbox" name="Sunday" id="sundayid" onclick="ChangeDate()" /> Sunday</p>
+                </td>
+            </tr>
+        </table>
+        <br />
+        <table>
+            <tr>
+                <td width="25%" style="text-align: center; vertical-align:top">
+                    <div id="calendar1" class="vanilla-calendar" style="display:none"> </div>
+                </td>
+                <td width="25%" style="text-align: center; vertical-align: top">
+                    <div id="calendar2" class="vanilla-calendar" style="display:none"> </div>
+                </td>
+                <td width="25%" style="text-align: center; vertical-align: top">
+                    <div id="calendar3" class="vanilla-calendar" style="display:none"> </div>
+                </td>
+                <td width="25%" style="text-align: center; vertical-align:top">
+                    <table width="100%">
+                        <tr style="height: 15px">
+                            <td width="25%" style="background: #ffc060">
+                            </td>
+                            <td width="75%">
+                                day with shifts
+                            </td>
+                        </tr>
+                        <tr style="height: 15px">
+                            <td width="25%" style="background: #80ff60">
+                            </td>
+                            <td width="75%">
+                                new day
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br />
+        <div style="text-align: center; font-size: 25px; font-weight: bold">RF:</div>
+        <br />
+        <table style="margin-left: auto; margin-right: auto; width: 100%; text-align: center">
+            <tr>
+                <th style="width:10%">Shift</th>
+                <th style="width:10%">Active</th>
+                <th style="width:10%">Template</th>
+                <th style="width:70%">Details</th>
+            </tr>
+            @{
+                for (var i = 1; i <= 3; i++)
+                {
+                    <tr style="border-top: 1px solid">
+                        <td>@i</td>
+                        <td>
+                            <input type="checkbox" onclick="Templates(this, @i, 1)" name="@string.Concat("rfactive", i)" id="@string.Concat("rfactive", i)" />
+                        </td>
+                        <td>
+                            <input type="text" id="@string.Concat("rftemplate" + i)" name="@string.Concat("rfshift" + i)" hidden />
+                            <select id="@string.Concat("rfschedules", i)" onchange="Details(this, @i, 1)" style="display: none"> </select>
+                        </td>
+                        <td id="@string.Concat("rfdescription", i)"></td>
+                    </tr>
+                }
+            }
+        </table>
+        <br />
+        <div style="text-align: center; font-size: 25px; font-weight: bold">WM:</div>
+        <br />
+        <table style="margin-left: auto; margin-right: auto; width: 100%; text-align: center">
+            <tr>
+                <th style="width:10%">Shift</th>
+                <th style="width:10%">Active</th>
+                <th style="width:10%">Template</th>
+                <th style="width:70%">Details</th>
+            </tr>
+            @for (var i = 1; i <= 3; i++)
+            {
+                <tr style="border-top: 1px solid">
+                    <td>@i</td>
+                    <td>
+                        <input type="checkbox" onclick="Templates(this, @i, 2)" name="@string.Concat("wmactive", i)" id="@string.Concat("wmactive", i)" />
+                    </td>
+                    <td>
+                        <input type="text" id="@string.Concat("wmtemplate" + i)" name="@string.Concat("wmshift" + i)" hidden />
+                        <select id="@string.Concat("wmschedules", i)" onchange="Details(this, @i, 2)" style="display: none"> </select>
+                    </td>
+                    <td id="@string.Concat("wmdescription", i)"></td>
+                </tr>
+            }
+        </table>
+        <br />
+        <div hidden>
+            <input type="date" name="dateBefore" id="dateBefore" />
+            <input type="date" name="dateAfter" id="dateAfter" />
+            <input type="date" id="before" name="dateBefore" />
+            <input type="date" id="after" name="dateAfter" />
+            <input type="submit" name="dataAction" value="Save" id="save" />
+            <input type="submit" name="dataAction" value="Cancel" id="cancel" />
+        </div>
+    </form>
+    <table width="100%">
+        <tr>
+            <td width="50%" style="text-align:center">
+                <button style="width: 200px" onclick="Save('@Url.Action("VerifySchedules")')">Save</button>
+            </td>
+            <td width="50%" style="text-align:center">
+                <button style="width: 200px" onclick="$('#cancel').click()">Cancel</button>
+            </td>
+        </tr>
+    </table>
+    <br />
+    <div style="border: 1px solid; text-align: center; background: #f8ffff">
+        List of all templates
+        <button id="show" onclick="{ $('#show').hide(); $('#hide').show(); $('#alltemplates').show(); window.scrollTo(0, window.outerHeight) }" style="margin-left: 50px; width: 200px">Show</button>
+        <button id="hide" onclick="{ $('#show').show(); $('#hide').hide(); $('#alltemplates').hide(); }" style="margin-left: 50px; width: 200px; display: none">Hide</button>
+        <div id="alltemplates" style="display: none"> </div>
+    </div>
+    <script>
+        function Templates(e, i, nline) {
+            var line = nline == 1 ? 'rf' : 'wm';
+            ShowTemplates(e, `${line}schedules${i}`, '@Url.Action("GetTemplates")', nline);
+        }
+        function Details(e, i, nline) {
+            var line = nline == 1 ? 'rf' : 'wm';
+            ShowDetails(e, '@Url.Action("GetDetails")', $(`#${line}description${i}`));
+            $(`#${line}template${i}`).val(document.getElementById(`${line}schedules${i}`).value);
+        }
+        function ChangeDate() {
+            var month1 = @Html.Raw(Json.Serialize(ViewBag.Month1));
+            var month2 = @Html.Raw(Json.Serialize(ViewBag.Month2));
+            var month3 = @Html.Raw(Json.Serialize(ViewBag.Month3));
+            CreateCalendars(month1, month2, month3);
+        }
+        function BlockChangeDate(before) {
+            if (before) $('#rangeAfter')[0].min = $('#rangeBefore').val();
+            else $('#rangeBefore')[0].max = $('#rangeAfter').val();
+        }
+        function Save() {
+            $('#save').click();
+        }
+    </script>
+    <script>
+        var before = @Html.Raw(Json.Serialize(ViewBag.Before.ToString("yyyy-MM-dd")));
+        var after = @Html.Raw(Json.Serialize(ViewBag.After.ToString("yyyy-MM-dd")));
+        $('#dateBefore').val(before);
+        $('#rangeBefore').val(before);
+        $('#dateAfter').val(after);
+        $('#rangeAfter').val(after);
+        $('#rangeBefore').change();
+        BlockChangeDate(false);
+        BlockChangeDate(true);
+        AllTemplatesTable("@Url.Action("GetAllTemplates")", '#alltemplates');
+    </script>
+</body>
+</html>

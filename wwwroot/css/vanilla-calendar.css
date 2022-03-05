@@ -1,0 +1,52 @@
+:root {
+    --vanilla-calendar-border-color: #e7e9ed;
+    --vanilla-calendar-selected-bg-color: #538fcd;
+    --vanilla-calendar-selected-color: #fff;
+}
+
+.vanilla-calendar {
+    border: solid 1px var(--vanilla-calendar-border-color);
+}
+
+.vanilla-calendar-header {
+    align-items: center;
+    display: flex;
+    padding: 10px;
+    text-transform: uppercase;
+}
+
+.vanilla-calendar-header__label {
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+}
+
+.vanilla-calendar-week {
+    background-color: var(--vanilla-calendar-selected-bg-color);
+    display: flex;
+    flex-wrap: wrap;
+}
+
+    .vanilla-calendar-week span {
+        color: var(--vanilla-calendar-selected-color);
+        flex-direction: column;
+        flex: 0 0 14.28%;
+        font-size: 1em;
+        font-weight: bold;
+        max-width: 14.28%;
+        padding: 15px 0px;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+.vanilla-calendar-body {
+    background-color: rgba(var(--vanilla-calendar-selected-bg-color), 0.3);
+    display: flex;
+    flex-wrap: wrap;
+    padding-bottom: 10px
+}
+
+.vanilla-calendar-date {
+    flex: 0 0 14.28%;
+    padding: 3px 0;
+}
