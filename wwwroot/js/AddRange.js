@@ -246,14 +246,14 @@ function AllTemplatesTable(url, id) {
             options += '</tr>';
             for (var index = 0; index < response.length; index++) {
                 options += '<tr style="border-top: 1px solid;">';
-                options += '<td>' + response[index].line + '</td>';
-                options += '<td>' + response[index].number + '</td>';
-                options += '<td>' + response[index].shift + '</td>';
-                options += '<td>' + response[index].lunch + '</td>';
-                options += '<td>' + response[index].break1 + '</td>';
-                options += '<td>' + response[index].break2 + '</td>';
-                options += '<td>' + response[index].break3 + '</td>';
-                options += '</tr>';
+                options += `<td>${response[index].line}</td>`;
+                options += `<td>${response[index].number}</td>`;
+                options += `<td>${response[index].shift}</td>`;
+                options += `<td>${response[index].lunch}</td>`;
+                options += `<td>${response[index].break1}</td>`;
+                options += `<td>${response[index].break2}</td>`;
+                options += `<td>${response[index].break3}</td>`;
+                options += `</tr>`;
             }
             options += '</table>';
             $(id).append(options);

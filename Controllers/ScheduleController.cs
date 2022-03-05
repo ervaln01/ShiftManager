@@ -3,10 +3,8 @@
 	using ExportToExcel;
 
 	using Microsoft.AspNetCore.Mvc;
-	using Microsoft.Extensions.Options;
 
 	using ShiftManager.Models;
-	using ShiftManager.Models.Data;
 	using ShiftManager.Models.Entity;
 	using ShiftManager.Models.Logic;
 
