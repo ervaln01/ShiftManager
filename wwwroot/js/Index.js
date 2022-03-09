@@ -1,6 +1,10 @@
 ﻿function RangeTimelines(dateBefore, dateAfter, url, id, urlEdit) {
     if (dateBefore[0].value === "" || dateAfter[0].value === "") return;
-    $.ajax({ url: url, data: { "before": dateBefore[0].value, "after": dateAfter[0].value }, success: (response) => CreateTable(response, id, urlEdit) });
+    $.ajax({
+        url: url,
+        data: { "before": dateBefore[0].value, "after": dateAfter[0].value },
+        success: (response) => CreateTable(response, id, urlEdit)
+    });
 }
 
 function CreateTable(response, id, url) {

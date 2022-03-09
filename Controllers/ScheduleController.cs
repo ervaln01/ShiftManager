@@ -5,6 +5,7 @@
 	using Microsoft.AspNetCore.Mvc;
 
 	using ShiftManager.Models;
+	using ShiftManager.Models.Data;
 	using ShiftManager.Models.Entity;
 	using ShiftManager.Models.Logic;
 
@@ -46,34 +47,15 @@
 		/// Метод обработки страницы редактирования дня.
 		/// </summary>
 		/// <returns>Страница редактирования дня.</returns>
-		public IActionResult EditDay(
-			string dataAction,
-			string rfshift1,
-			string rfactive1,
-			string rfshift2,
-			string rfactive2,
-			string rfshift3,
-			string rfactive3,
-			string wmshift1,
-			string wmactive1,
-			string wmshift2,
-			string wmactive2,
-			string wmshift3,
-			string wmactive3,
-			DateTime currentDate)
+		public IActionResult EditDay(DailyShifts shifts, DateTime currentDate)
 		{
-			var timelines = new ApplicationContext().Timelines.Where(x => x.IsActive && x.TargetDate == currentDate);
+			var timelines = Sql.GetTimelines(currentDate);
 
-			if (string.IsNullOrEmpty(dataAction)) return View(timelines.GetTargetDay(currentDate));
+			if (string.IsNullOrEmpty(shifts.dataAction)) 
+				return View(timelines.GetTargetDay(currentDate));
 
-			if (dataAction.Equals("Save"))
-			{
-				var RFShift = new string[3] { rfshift1, rfshift2, rfshift3 };
-				var WMShift = new string[3] { wmshift1, wmshift2, wmshift3 };
-				var RFActive = new string[3] { rfactive1, rfactive2, rfactive3 };
-				var WMActive = new string[3] { wmactive1, wmactive2, wmactive3 };
-				timelines.Process(new ApplicationContext(), CurrentUser, currentDate, RFShift, RFActive, WMShift, WMActive, false);
-			}
+			if (shifts.dataAction.Equals("Save"))
+				timelines.Process(CurrentUser, currentDate, shifts, false);
 
 			return RedirectToAction("Index");
 		}
@@ -82,49 +64,27 @@
 		/// Метод обработки страницы добавления смен.
 		/// </summary>
 		/// <returns>Страница добаления смен.</returns>
-		public IActionResult AddRange(
-			string dataAction,
-			string rfshift1,
-			string rfactive1,
-			string rfshift2,
-			string rfactive2,
-			string rfshift3,
-			string rfactive3,
-			string wmshift1,
-			string wmactive1,
-			string wmshift2,
-			string wmactive2,
-			string wmshift3,
-			string wmactive3,
-			DateTime rangeBefore,
-			DateTime rangeAfter,
-			string saturday,
-			string sunday)
+		public IActionResult AddRange(DailyShifts shifts, DateRange range, string saturday, string sunday)
 		{
-			if (string.IsNullOrEmpty(dataAction))
+			if (string.IsNullOrEmpty(shifts.dataAction))
 			{
 				ViewBag.Before = DateTime.Today;
 				ViewBag.After = StartMonth.AddMonths(1).AddDays(-1);
-				var date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-				var active = new ApplicationContext().Timelines.Where(x => x.IsActive);
-				ViewBag.Month1 = GetMonth(active, date);
-				ViewBag.Month2 = GetMonth(active, date.AddMonths(1));
-				ViewBag.Month3 = GetMonth(active, date.AddMonths(2));
+				var active = Sql.GetTimelines(new DateRange() { before = StartMonth, after = StartMonth.AddMonths(2) });
+				ViewBag.Month1 = GetMonth(active, StartMonth);
+				ViewBag.Month2 = GetMonth(active, StartMonth.AddMonths(1));
+				ViewBag.Month3 = GetMonth(active, StartMonth.AddMonths(2));
 				return View();
 			}
 
-			if (dataAction.Equals("Save"))
+			if (shifts.dataAction.Equals("Save"))
 			{
-				var timelines = new ApplicationContext().Timelines.Where(x => x.IsActive && x.TargetDate >= rangeBefore && x.TargetDate <= rangeAfter);
-				var RFShift = new string[3] { rfshift1, rfshift2, rfshift3 };
-				var WMShift = new string[3] { wmshift1, wmshift2, wmshift3 };
-				var RFActive = new string[3] { rfactive1, rfactive2, rfactive3 };
-				var WMActive = new string[3] { wmactive1, wmactive2, wmactive3 };
-				timelines.Process(new ApplicationContext(), CurrentUser, rangeBefore, RFShift, RFActive, WMShift, WMActive, true, rangeAfter, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
+				var timelines = Sql.GetTimelines(range);
+				timelines.Process(CurrentUser, range.before, shifts, true, range.after, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
 			}
 
 			return RedirectToAction("Index");
-			static dynamic GetMonth(IQueryable<ShiftTimeline> active, DateTime date) => new
+			static dynamic GetMonth(IEnumerable<ShiftTimeline> active, DateTime date) => new
 			{
 				shifts = active.GetShifts(date),
 				descriptions = active.GetShiftDescriptions(date).ToArray()
@@ -137,12 +97,11 @@
 		/// <param name="before">Дата начала периода.</param>
 		/// <param name="after">Дата конца периода.</param>
 		/// <returns>Загружаемый файл.</returns>
-		public FileResult ExportShifts(DateTime before, DateTime after)
+		public FileResult ExportShifts(DateRange range)
 		{
 			var path = Path.GetTempPath();
 			var tableName = $"LastShiftsExport.xlsx";
-			new ApplicationContext().Timelines
-				.Where(x => x.TargetDate >= before && x.TargetDate <= after && x.IsActive)
+			Sql.GetTimelines(range)
 				.OrderBy(x => x.TargetDate)
 				.ThenBy(x => x.Line)
 				.ThenBy(x => x.ShiftNumber)
@@ -183,7 +142,7 @@
 		/// </summary>
 		/// <param name="option">Выбранная опция.</param>
 		/// <returns>Детали шаблона.</returns>
-		public dynamic GetDetails(int option) => Sql.GetDetails(option);
+		public string GetDetails(int option) => Sql.GetDetails(option);
 
 		/// <summary>
 		/// Получение информации о шаблонах.
@@ -191,7 +150,7 @@
 		/// <param name="line">Линия.</param>
 		/// <param name="shiftNumber">Номер смены.</param>
 		/// <returns>Набор шаблонов по заданным параметрам.</returns>
-		public dynamic GetTemplates(int line, int shiftNumber) => Sql.GetTemplates(line, shiftNumber);
+		public List<Descriptions> GetTemplates(int line, int shiftNumber) => Sql.GetTemplates(line, shiftNumber);
 
 		/// <summary>
 		/// Получение сокращенных шаблонов смен.
@@ -211,19 +170,13 @@
 		/// <param name="before">Дата начала периода.</param>
 		/// <param name="after">Дата конца периода.</param>
 		/// <returns>Список смен за заданный период.</returns>
-		public IEnumerable<dynamic> GetTimelines(string before, string after) => Sql.GetTimelines(before, after);
+		public IEnumerable<dynamic> GetTimelines(DateRange range) => Sql.GetTimelines(range).GetTable(range);
 
 		/// <summary>
 		/// Проверка корректности не пересечения смен.
 		/// </summary>
-		/// <param name="rf1">Шаблон 1 смены линии холодильников.</param>
-		/// <param name="rf2">Шаблон 2 смены линии холодильников.</param>
-		/// <param name="rf3">Шаблон 3 смены линии холодильников.</param>
-		/// <param name="wm1">Шаблон 1 смены линии стиральных машин.</param>
-		/// <param name="wm2">Шаблон 2 смены линии стиральных машин.</param>
-		/// <param name="wm3">Шаблон 3 смены линии стиральных машин.</param>
 		/// <returns>Код корректности заданных шаблонов смен.</returns>
-		public dynamic VerifySchedules(int rf1, int rf2, int rf3, int wm1, int wm2, int wm3) => Sql.VerifySchedules(rf1, rf2, rf3, wm1, wm2, wm3);
+		public dynamic VerifySchedules(VerifyModel model) => Sql.VerifySchedules(model);
 		#endregion
 	}
 }

@@ -4,8 +4,8 @@
 }
 
 function SendDate(before, after) {
-    $('#' + before).val($('#dateBefore').val());
-    $('#' + after).val($('#dateAfter').val());
+    $(`#${before}`).val($('#dateBefore').val());
+    $(`#${after}`).val($('#dateAfter').val());
 }
 
 function ExportToExcel(url) {
@@ -25,12 +25,12 @@ function SetColorLegend(id, url) {
         success: (response) => {
             for (var index = 0; index < response.length; index++) {
                 options += '<tr>';
-                options += '<td style="background:' + ShiftColor(response[index]) + '; height: 15px; width: 30px"></td>';
-                options += '<td style="width: 100px">' + response[index] + '</td>';
+                options += `<td style="background:${ShiftColor(response[index])}; height: 15px; width: 30px"></td>`;
+                options += `<td style="width: 100px">${response[index]}</td>`;
                 options += '</tr>';
             }
             options += '<tr>';
-            options += '<td style="background:' + ShiftColor(null) + '; height: 15px; width: 30px"></td>';
+            options += `<td style="background:${ShiftColor(null)}; height: 15px; width: 30px"></td>`;
             options += '<td style="width: 100px">Not set</td>';
             options += '</tr>';
 

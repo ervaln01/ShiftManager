@@ -51,7 +51,7 @@
 		/// <param name="active">Дни с активными сменами.</param>
 		/// <param name="date">Первый день месяца.</param>
 		/// <returns>Дни со сменами</returns>
-		public static int[] GetShifts(this IQueryable<ShiftTimeline> active, DateTime date) =>
+		public static int[] GetShifts(this IEnumerable<ShiftTimeline> active, DateTime date) =>
 			active.Where(x => x.TargetDate >= date && x.TargetDate < date.AddMonths(1)).Select(x => x.TargetDate.Day).Distinct().ToArray();
 
 		/// <summary>
@@ -60,7 +60,7 @@
 		/// <param name="active">Дни с активными сменами.</param>
 		/// <param name="date">Первый день месяца.</param>
 		/// <returns>Набор описаний заданных смен.</returns>
-		public static IEnumerable<string> GetShiftDescriptions(this IQueryable<ShiftTimeline> active, DateTime date)
+		public static IEnumerable<string> GetShiftDescriptions(this IEnumerable<ShiftTimeline> active, DateTime date)
 		{
 			var activeDays = active.Where(x => x.TargetDate >= date && x.TargetDate < date.AddMonths(1)).OrderBy(x => x.TargetDate).ToList();
 			return activeDays.Select(x => x.TargetDate).Distinct().Select(day =>
@@ -75,12 +75,11 @@
 		/// Формирование таблицы смен на заданный период.
 		/// </summary>
 		/// <param name="timelines">Последовательность смен.</param>
-		/// <param name="before">Дата начала периода.</param>
-		/// <param name="after">Дата конца периода.</param>
+		/// <param name="range">Период дат.</param>
 		/// <returns>Последовательность динамически задаваемых строк таблицы.</returns>
-		public static IEnumerable<dynamic> GetTable(this IEnumerable<ShiftTimeline> timelines, DateTime before, DateTime after)
+		public static IEnumerable<TableModel> GetTable(this IEnumerable<ShiftTimeline> timelines, DateRange range)
 		{
-			for (var date = before; date <= after; date = date.AddDays(1))
+			for (var date = range.before; date <= range.after; date = date.AddDays(1))
 			{
 				var response = new TableRow(date);
 				var dayShifts = timelines.Where(x => x.TargetDate == date);
@@ -95,7 +94,7 @@
 					response.WM[shift.ShiftNumber - 1] = $"{shift.ShiftBegin.GetTime()}-{shift.ShiftEnd.GetTime()}";
 				}
 
-				yield return new
+				yield return new ()
 				{
 					date = response.Date.ToString("yyyy-MM-dd"),
 					rf1 = response.RF[0],
@@ -146,11 +145,8 @@
 		/// </summary>
 		/// <param name="templates">Последовательность шаблонов смен.</param>
 		/// <returns>Информация о шаблонах.</returns>
-		public static dynamic GetTemplates(this IEnumerable<ShiftTemplate> templates) => new
-		{
-			templateIds = templates.Select(x => x.Id).ToList(),
-			templateDesc = templates.Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}").ToList()
-		};
+		public static List<Descriptions> GetTemplates(this IEnumerable<ShiftTemplate> templates) =>
+			templates.Select(x => new Descriptions() { id = x.Id, description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" }).ToList();
 
 		/// <summary>
 		/// Получение информации о шаблонах.
@@ -172,25 +168,23 @@
 		/// Запись данных в БД.
 		/// </summary>
 		/// <param name="timelines">Последовательность смен.</param>
-		/// <param name="context">Контекст базы данных.</param>
 		/// <param name="user">Пользователь, добавивший данные.</param>
 		/// <param name="currentDate">Текущая дата.</param>
-		/// <param name="RFShift">Смены линии холодильников.</param>
-		/// <param name="RFActive">Активность смен линии холодильников.</param>
-		/// <param name="WMShift">Смены линии стиральных машин.</param>
-		/// <param name="WMActive">Активность смен линии стиральных машин.</param>
 		/// <param name="range">Диапазон дней?</param>
 		/// <param name="lastDate">Последняя дата диапазона.</param>
 		/// <param name="saturday">Задавать смены по субботам?</param>
 		/// <param name="sunday">Задавать смены по воскресеньям?</param>
-		public static void Process(this IQueryable<ShiftTimeline> timelines, ApplicationContext context, string user, DateTime currentDate,
-			string[] RFShift, string[] RFActive, string[] WMShift, string[] WMActive, bool range,
+		public static void Process(this IEnumerable<ShiftTimeline> timelines, string user, DateTime currentDate,
+			DailyShifts shifts, bool range,
 			DateTime? lastDate = null, bool saturday = false, bool sunday = false)
 		{
+			using var context = new ApplicationContext();
+			var RFShift = shifts.RFShift;
+			var WMShift = shifts.WMShift;
 			for (var index = 0; index < 3; index++)
 			{
-				if (RFActive[index] == null) RFShift[index] = null;
-				if (WMActive[index] == null) WMShift[index] = null;
+				if (shifts.RFActive[index] == null) RFShift[index] = null;
+				if (shifts.WMActive[index] == null) WMShift[index] = null;
 			}
 
 			foreach (var timeline in timelines)

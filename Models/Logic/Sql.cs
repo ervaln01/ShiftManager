@@ -1,5 +1,6 @@
 ﻿namespace ShiftManager.Models.Logic
 {
+	using ShiftManager.Models.Data;
 	using ShiftManager.Models.Entity;
 	using System;
 	using System.Collections.Generic;
@@ -18,13 +19,25 @@
 			return context.Templates.FirstOrDefault(x => x.Id == option).GetDetails();
 		}
 
+		public static List<ShiftTimeline> GetTimelines(DateTime currentDate)
+		{
+			using var context = new ApplicationContext();
+			return context.Timelines.Where(x => x.IsActive && x.TargetDate == currentDate).ToList();
+		}
+
+		public static List<ShiftTimeline> GetTimelines(DateRange range)
+		{
+			using var context = new ApplicationContext();
+			return context.Timelines.Where(x => x.IsActive && x.TargetDate >= range.before && x.TargetDate <= range.after).ToList();
+		}
+
 		/// <summary>
 		/// Получение информации о шаблонах.
 		/// </summary>
 		/// <param name="line">Линия.</param>
 		/// <param name="shiftNumber">Номер смены.</param>
 		/// <returns>Набор шаблонов по заданным параметрам.</returns>
-		public static dynamic GetTemplates(int line, int shiftNumber)
+		public static List<Descriptions> GetTemplates(int line, int shiftNumber)
 		{
 			using var context = new ApplicationContext();
 			return context.Templates.Where(x => x.Line == line && x.ShiftNumber == shiftNumber).GetTemplates();
@@ -51,34 +64,16 @@
 		}
 
 		/// <summary>
-		/// Получение списка для формирования таблицы смен.
-		/// </summary>
-		/// <param name="before">Дата начала периода.</param>
-		/// <param name="after">Дата конца периода.</param>
-		/// <returns>Список смен за заданный период.</returns>
-		public static IEnumerable<dynamic> GetTimelines(string before, string after)
-		{
-			using var context = new ApplicationContext();
-			return context.Timelines.Where(x => x.TargetDate >= DateTime.Parse(before) && x.TargetDate <= DateTime.Parse(after) && x.IsActive).GetTable(DateTime.Parse(before), DateTime.Parse(after)).ToList();
-		}
-
-		/// <summary>
 		/// Проверка корректности не пересечения смен.
 		/// </summary>
-		/// <param name="rf1">Шаблон 1 смены линии холодильников.</param>
-		/// <param name="rf2">Шаблон 2 смены линии холодильников.</param>
-		/// <param name="rf3">Шаблон 3 смены линии холодильников.</param>
-		/// <param name="wm1">Шаблон 1 смены линии стиральных машин.</param>
-		/// <param name="wm2">Шаблон 2 смены линии стиральных машин.</param>
-		/// <param name="wm3">Шаблон 3 смены линии стиральных машин.</param>
 		/// <returns>Код корректности заданных шаблонов смен.</returns>
-		public static dynamic VerifySchedules(int rf1, int rf2, int rf3, int wm1, int wm2, int wm3)
+		public static dynamic VerifySchedules(VerifyModel model)
 		{
 			using var context = new ApplicationContext();
 			return new
 			{
-				rf = context.Verify(rf1, rf2, rf3),
-				wm = context.Verify(wm1, wm2, wm3)
+				rf = context.Verify(model.rf1, model.rf2, model.rf3),
+				wm = context.Verify(model.wm1, model.wm2, model.wm3)
 			};
 		}
 	}
