@@ -1,0 +1,14 @@
+﻿<div hidden>
+    <form action="@Url.Action("AddRange")">
+        <input type="submit" id="add" />
+    </form>
+    <form action="@Url.Action("EditDay")">
+        <input type="date" id="editDate" name="date" />
+        <input type="submit" id="edit" />
+    </form>
+    <form action="@Url.Action("ExportShifts")">
+        <input type="date" id="eBefore" name="before" />
+        <input type="date" id="eAfter" name="after" />
+        <input type="submit" id="export"/>
+    </form>
+</div>

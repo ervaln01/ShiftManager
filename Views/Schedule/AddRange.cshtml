@@ -14,11 +14,11 @@
             <tr>
                 <td width="25%" style="text-align:center">
                     <input type="date" name="before" id="rangeBefore"
-                           min="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="{ ChangeDate(); BlockChangeDate(true); }" />
+                           min="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="{ ChangeDate(); BlockChangeDate(); }" />
                 </td>
                 <td width="25%" style="text-align:center">
                     <input type="date" name="after" id="rangeAfter"
-                           max="@(new DateTime(DateTime.Today.AddMonths(3).Year, DateTime.Today.AddMonths(3).Month, 1).AddDays(-1).ToString("yyyy-MM-dd"))" onchange="{ ChangeDate(); BlockChangeDate(false); }" />
+                           max="@(new DateTime(DateTime.Today.AddMonths(3).Year, DateTime.Today.AddMonths(3).Month, 1).AddDays(-1).ToString("yyyy-MM-dd"))" onchange="{ ChangeDate(); BlockChangeDate(); }" />
                 </td>
                 <td width="25%" style="text-align:center">
                     <p><input type="checkbox" name="Saturday" id="saturdayid" onclick="ChangeDate()" /> Saturday</p>
@@ -155,9 +155,9 @@
             var month3 = @Html.Raw(Json.Serialize(ViewBag.Month3));
             CreateCalendars(month1, month2, month3);
         }
-        function BlockChangeDate(before) {
-            if (before) $('#rangeAfter')[0].min = $('#rangeBefore').val();
-            else $('#rangeBefore')[0].max = $('#rangeAfter').val();
+        function BlockChangeDate() {
+            $('#rangeAfter')[0].min = $('#rangeBefore').val();
+            $('#rangeBefore')[0].max = $('#rangeAfter').val();
         }
         function Save() {
             $('#save').click();
@@ -171,8 +171,8 @@
         $('#dateAfter').val(after);
         $('#rangeAfter').val(after);
         $('#rangeBefore').change();
-        BlockChangeDate(false);
-        BlockChangeDate(true);
+        BlockChangeDate();
+        BlockChangeDate();
         AllTemplatesTable("@Url.Action("GetAllTemplates")", '#alltemplates');
     </script>
 </body>

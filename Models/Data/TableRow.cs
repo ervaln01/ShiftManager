@@ -10,17 +10,17 @@
 		/// <summary>
 		/// Дата.
 		/// </summary>
-		public DateTime Date;
+		public DateTime Date { get; set; }
 
 		/// <summary>
 		/// Краткие описания шаблонов смен на линии холодильников.
 		/// </summary>
-		public string[] RF;
+		public string[] RF { get; set; }
 
 		/// <summary>
 		/// Краткие описания шаблонов смен на линии стиральных машин.
 		/// </summary>
-		public string[] WM;
+		public string[] WM { get; set; }
 
 		/// <summary>
 		/// Конструктор класса <see cref="TableRow"/>.

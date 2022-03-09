@@ -1,0 +1,8 @@
+﻿<script>
+    var before = @Html.Raw(Json.Serialize(ViewBag.Before.ToString("yyyy-MM-dd")));
+    var after = @Html.Raw(Json.Serialize(ViewBag.After.ToString("yyyy-MM-dd")));
+    $('#before').val(before);
+    $('#after').val(after);
+    ChangeDate('@Url.Action("GetTimelines")');
+    SetColorLegend('#colorLegend', "@Url.Action("GetAllShortTemplates")");
+</script>

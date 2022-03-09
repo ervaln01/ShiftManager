@@ -77,7 +77,7 @@
 		/// <param name="timelines">Последовательность смен.</param>
 		/// <param name="range">Период дат.</param>
 		/// <returns>Последовательность динамически задаваемых строк таблицы.</returns>
-		public static IEnumerable<TableModel> GetTable(this IEnumerable<ShiftTimeline> timelines, DateRange range)
+		public static IEnumerable<TableRow> GetTable(this IEnumerable<ShiftTimeline> timelines, DateRange range)
 		{
 			for (var date = range.before; date <= range.after; date = date.AddDays(1))
 			{
@@ -94,16 +94,7 @@
 					response.WM[shift.ShiftNumber - 1] = $"{shift.ShiftBegin.GetTime()}-{shift.ShiftEnd.GetTime()}";
 				}
 
-				yield return new ()
-				{
-					date = response.Date.ToString("yyyy-MM-dd"),
-					rf1 = response.RF[0],
-					rf2 = response.RF[1],
-					rf3 = response.RF[2],
-					wm1 = response.WM[0],
-					wm2 = response.WM[1],
-					wm3 = response.WM[2]
-				}; ;
+				yield return response;
 			}
 		}
 
@@ -149,22 +140,6 @@
 			templates.Select(x => new Descriptions() { id = x.Id, description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" }).ToList();
 
 		/// <summary>
-		/// Получение информации о шаблонах.
-		/// </summary>
-		/// <param name="templates">Последовательность шаблонов смен.</param>
-		/// <returns>Последовательность информации о всех шаблонах.</returns>
-		public static IEnumerable<dynamic> GetAllTemplates(this IEnumerable<ShiftTemplate> templates) => templates.Select(template => new
-		{
-			line = template.Line == 1 ? "RF" : "WM",
-			number = template.ShiftNumber,
-			shift = $"{template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}",
-			lunch = $"{template.LunchBegin.GetTime()}-{template.LunchEnd.GetTime()}",
-			break1 = $"{template.Break1Begin.GetTime()}-{template.Break1End.GetTime()}",
-			break2 = $"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}",
-			break3 = $"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}",
-		} as dynamic);
-
-		/// <summary>
 		/// Запись данных в БД.
 		/// </summary>
 		/// <param name="timelines">Последовательность смен.</param>
@@ -174,7 +149,7 @@
 		/// <param name="lastDate">Последняя дата диапазона.</param>
 		/// <param name="saturday">Задавать смены по субботам?</param>
 		/// <param name="sunday">Задавать смены по воскресеньям?</param>
-		public static void Process(this IEnumerable<ShiftTimeline> timelines, string user, DateTime currentDate,
+		public static void Save(this IEnumerable<ShiftTimeline> timelines, string user, DateTime currentDate,
 			DailyShifts shifts, bool range,
 			DateTime? lastDate = null, bool saturday = false, bool sunday = false)
 		{

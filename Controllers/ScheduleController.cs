@@ -35,27 +35,26 @@
 		/// </summary>
 		/// <param name="dataAction">Действие, полученное со страницы.</param>
 		/// <returns>Страница отображения смен.</returns>
-		public IActionResult Index(string dataAction)
+		public IActionResult Index()
 		{
 			ViewBag.Before = StartMonth;
 			ViewBag.After = StartMonth.AddMonths(1).AddDays(-1);
-
-			return string.IsNullOrEmpty(dataAction) ? View() : RedirectToAction("AddRange");
+			return View();
 		}
 
 		/// <summary>
 		/// Метод обработки страницы редактирования дня.
 		/// </summary>
 		/// <returns>Страница редактирования дня.</returns>
-		public IActionResult EditDay(DailyShifts shifts, DateTime currentDate)
+		public IActionResult EditDay(DailyShifts shifts, DateTime date)
 		{
-			var timelines = Sql.GetTimelines(currentDate);
+			var timelines = Sql.GetTimelines(date);
 
 			if (string.IsNullOrEmpty(shifts.dataAction)) 
-				return View(timelines.GetTargetDay(currentDate));
+				return View(timelines.GetTargetDay(date));
 
 			if (shifts.dataAction.Equals("Save"))
-				timelines.Process(CurrentUser, currentDate, shifts, false);
+				timelines.Save(CurrentUser, date, shifts, false);
 
 			return RedirectToAction("Index");
 		}
@@ -80,7 +79,7 @@
 			if (shifts.dataAction.Equals("Save"))
 			{
 				var timelines = Sql.GetTimelines(range);
-				timelines.Process(CurrentUser, range.before, shifts, true, range.after, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
+				timelines.Save(CurrentUser, range.before, shifts, true, range.after, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
 			}
 
 			return RedirectToAction("Index");
@@ -137,6 +136,8 @@
 		public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
 		#region jQueryHelper
+		public IEnumerable<TableRow> GetTimelines(DateRange range) => Sql.GetTimelines(range).GetTable(range);
+
 		/// <summary>
 		/// Получение деталей определенного шаблона.
 		/// </summary>
@@ -162,15 +163,7 @@
 		/// Получение шаблонов смен.
 		/// </summary>
 		/// <returns>Набор всех шаблонов.</returns>
-		public IEnumerable<dynamic> GetAllTemplates() => Sql.GetAllTemplates();
-
-		/// <summary>
-		/// Получение списка для формирования таблицы смен.
-		/// </summary>
-		/// <param name="before">Дата начала периода.</param>
-		/// <param name="after">Дата конца периода.</param>
-		/// <returns>Список смен за заданный период.</returns>
-		public IEnumerable<dynamic> GetTimelines(DateRange range) => Sql.GetTimelines(range).GetTable(range);
+		public IEnumerable<Template> GetAllTemplates() => Sql.GetAllTemplates();
 
 		/// <summary>
 		/// Проверка корректности не пересечения смен.
