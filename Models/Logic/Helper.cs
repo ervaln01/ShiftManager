@@ -1,10 +1,12 @@
 ﻿namespace ShiftManager.Models.Logic
 {
+	using ExportToExcel;
 	using ShiftManager.Models.Data;
 	using ShiftManager.Models.Entity;
 
 	using System;
 	using System.Collections.Generic;
+	using System.IO;
 	using System.Linq;
 
 	/// <summary>
@@ -60,15 +62,11 @@
 		/// <param name="active">Дни с активными сменами.</param>
 		/// <param name="date">Первый день месяца.</param>
 		/// <returns>Набор описаний заданных смен.</returns>
-		public static IEnumerable<string> GetShiftDescriptions(this IEnumerable<ShiftTimeline> active, DateTime date)
+		public static string GetShiftDescription(this IEnumerable<ShiftTimeline> active)
 		{
-			var activeDays = active.Where(x => x.TargetDate >= date && x.TargetDate < date.AddMonths(1)).OrderBy(x => x.TargetDate).ToList();
-			return activeDays.Select(x => x.TargetDate).Distinct().Select(day =>
-			{
-				var rf = $"{string.Join(" ", activeDays.Where(x => x.TargetDate == day && x.Line == 1).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
-				var wm = $"{string.Join(" ", activeDays.Where(x => x.TargetDate == day && x.Line == 2).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
-				return (!string.IsNullOrEmpty(rf) && !string.IsNullOrEmpty(wm)) ? $"RF {rf}\nWM {wm}" : !string.IsNullOrEmpty(rf) ? $"RF {rf}" : $"WM {wm}";
-			});
+			var rf = $"{string.Join(" ", active.Where(x => x.Line == 1).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
+			var wm = $"{string.Join(" ", active.Where(x => x.Line == 2).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
+			return (!string.IsNullOrEmpty(rf) && !string.IsNullOrEmpty(wm)) ? $"RF {rf}\nWM {wm}" : !string.IsNullOrEmpty(rf) ? $"RF {rf}" : $"WM {wm}";
 		}
 
 		/// <summary>
@@ -77,8 +75,9 @@
 		/// <param name="timelines">Последовательность смен.</param>
 		/// <param name="range">Период дат.</param>
 		/// <returns>Последовательность динамически задаваемых строк таблицы.</returns>
-		public static IEnumerable<TableRow> GetTable(this IEnumerable<ShiftTimeline> timelines, DateRange range)
+		public static IEnumerable<TableRow> GetTable(this DateRange range)
 		{
+			var timelines = Sql.GetTimelines(range);
 			for (var date = range.before; date <= range.after; date = date.AddDays(1))
 			{
 				var response = new TableRow(date);
@@ -96,6 +95,38 @@
 
 				yield return response;
 			}
+		}
+
+		public static byte[] GetExcelBytes(this DateRange range)
+		{
+			var path = Path.GetTempPath();
+			var tableName = $"LastShiftsExport.xlsx";
+			Sql.GetTimelines(range)
+				.OrderBy(x => x.TargetDate)
+				.ThenBy(x => x.Line)
+				.ThenBy(x => x.ShiftNumber)
+				.ToTable(true, "Shift timelines")
+				.AddColumn(x => x.TargetDate, "Target date", typeof(DateTime), "dd.MM.yyyy")
+				.AddColumn(x => x.Line == 1 ? "RF" : "WM", "Line", typeof(string))
+				.AddColumn(x => x.ShiftNumber, "Shift number", typeof(int))
+				.AddColumn(x => x.ShiftBegin, "Shift begin", typeof(DateTime), "dd.MM.yyyy HH:mm:ss")
+				.AddColumn(x => x.ShiftEnd, "Shift end", typeof(DateTime), "dd.MM.yyyy HH:mm:ss")
+				.AddColumn(x => x.LunchBegin, "Lunch begin", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.LunchEnd, "Lunch end", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.Break1Begin, "Break 1 begin", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.Break1End, "Break 1 end", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.Break2Begin, "Break 2 begin", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.Break2End, "Break 2 end", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.Break3Begin, "Break 3 begin", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.Break3End, "Break 3 end", typeof(DateTime), "HH:mm:ss")
+				.AddColumn(x => x.InsertUser, "Insert user", typeof(string))
+				.AddColumn(x => x.InsertTime, "Insert time", typeof(DateTime), "dd.MM.yyyy HH:mm:ss")
+				.GenerateTable(path, tableName);
+
+			var file = $"{path}\\{tableName}";
+			var bytes = File.ReadAllBytes(file);
+			File.Delete(file);
+			return bytes;
 		}
 
 		/// <summary>
@@ -193,7 +224,7 @@
 			if (count == 2)
 			{
 				if (shift3 == 0) return CorrectTemplates(shift1, shift2) ? 0 : 1;
-				if (shift2 == 0) return CorrectTemplates(shift3, shift1) ? 0 : 1;
+				if (shift2 == 0) return CorrectTemplates(shift1, shift3) ? 0 : 1;
 				if (shift1 == 0) return CorrectTemplates(shift2, shift3) ? 0 : 1;
 			}
 
@@ -209,10 +240,10 @@
 			}
 			return 2;
 
-			bool CorrectTemplates(int shift1, int shift2)
+			bool CorrectTemplates(int id1, int id2)
 			{
-				var template1 = context.Templates.FirstOrDefault(x => x.Id == shift1);
-				var template2 = context.Templates.FirstOrDefault(x => x.Id == shift2);
+				var template1 = context.Templates.FirstOrDefault(x => x.Id == id1);
+				var template2 = context.Templates.FirstOrDefault(x => x.Id == id2);
 				return template1.ShiftEnd <= template2.ShiftBegin;
 			}
 		}

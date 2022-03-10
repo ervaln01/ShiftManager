@@ -1,0 +1,39 @@
+﻿<div style="border: 1px solid; text-align: center; background: #f8ffff">
+    List of all templates
+    <button id="show" onclick="{ $('#show').hide(); $('#hide').show(); $('#alltemplates').show(); }" style="margin-left: 50px; width: 200px">Show</button>
+    <button id="hide" onclick="{ $('#show').show(); $('#hide').hide(); $('#alltemplates').hide(); }" style="margin-left: 50px; width: 200px; display: none">Hide</button>
+    <div id="alltemplates" style="display: none"> </div>
+</div>
+<script>
+    $.ajax({
+        url: "@Url.Action("GetAllTemplates")",
+        success: (response) => {
+            var options = '';
+            $('#alltemplates').text(options);
+            options += '<p />';
+            options += '<table style="width:100%">';
+            options += '<tr style="border-top: 1px solid;">';
+            options += '<th style="width:14.28%">LINE</th>';
+            options += '<th style="width:14.28%">SHIFT NUMBER</th>';
+            options += '<th style="width:14.28%">SHIFT</th>';
+            options += '<th style="width:14.28%">LUNCH</th>';
+            options += '<th style="width:14.28%">BREAK1</th>';
+            options += '<th style="width:14.28%">BREAK2</th>';
+            options += '<th style="width:14.28%">BREAK3</th>';
+            options += '</tr>';
+            for (var index = 0; index < response.length; index++) {
+                options += '<tr style="border-top: 1px solid;">';
+                options += `<td>${response[index].line}</td>`;
+                options += `<td>${response[index].number}</td>`;
+                options += `<td>${response[index].shift}</td>`;
+                options += `<td>${response[index].lunch}</td>`;
+                options += `<td>${response[index].break1}</td>`;
+                options += `<td>${response[index].break2}</td>`;
+                options += `<td>${response[index].break3}</td>`;
+                options += '</tr>';
+            }
+            options += '</table>';
+            $('#alltemplates').append(options);
+        }
+    });
+</script>

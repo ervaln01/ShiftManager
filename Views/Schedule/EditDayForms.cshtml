@@ -1,14 +1,26 @@
 ﻿<div hidden>
-    <form action="@Url.Action("AddRange")">
-        <input type="submit" id="add" />
-    </form>
-    <form action="@Url.Action("EditDay")">
-        <input type="date" id="editDate" name="date" />
-        <input type="submit" id="edit" />
-    </form>
-    <form action="@Url.Action("ExportShifts")">
-        <input type="date" id="eBefore" name="before" />
-        <input type="date" id="eAfter" name="after" />
-        <input type="submit" id="export"/>
+    @*<form action="@Url.Action("AddRange")">
+        <input type="text" name="currentDate" id="date" />
+
+        <input type="text" name="rfactive1" id="rfactive1" />
+        <input type="text" name="rfactive1" id="rfactive2" />
+        <input type="text" name="rfactive1" id="rfactive3" />
+
+        <input type="text" name="rfactive1" id="wmactive1" />
+        <input type="text" name="rfactive1" id="wmactive2" />
+        <input type="text" name="rfactive1" id="wmactive3" />
+
+        <input type="text" name="rfshift1" id="rfshift1" />
+        <input type="text" name="rfshift1" id="rfshift2" />
+        <input type="text" name="rfshift1" id="rfshift3" />
+
+        <input type="text" name="rfshift1" id="wmshift1" />
+        <input type="text" name="rfshift1" id="wmshift2" />
+        <input type="text" name="rfshift1" id="wmshift3" />
+
+        <input type="submit" id="save" />
+    </form>*@
+    <form action="@Url.Action("Index")">
+        <input type="submit" id="cancel" />
     </form>
 </div>

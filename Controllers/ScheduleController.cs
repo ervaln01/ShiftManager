@@ -1,7 +1,5 @@
 ﻿namespace ShiftManager.Controllers
 {
-	using ExportToExcel;
-
 	using Microsoft.AspNetCore.Mvc;
 
 	using ShiftManager.Models;
@@ -12,7 +10,6 @@
 	using System;
 	using System.Collections.Generic;
 	using System.Diagnostics;
-	using System.IO;
 	using System.Linq;
 
 	/// <summary>
@@ -23,7 +20,14 @@
 		/// <summary>
 		/// Пользователь, работающий в данный момент.
 		/// </summary>
-		private string CurrentUser => HttpContext.User.Identity.Name.Split('\\').Last().ToUpper();
+		private string CurrentUser 
+		{ 
+			get 
+			{
+				var user = HttpContext.User.Identity.Name;
+				return string.IsNullOrEmpty(user) ? "unknown" : user.Split('\\').Last().ToUpper();
+			}
+		}
 
 		/// <summary>
 		/// Начало текущего месяца.
@@ -33,7 +37,6 @@
 		/// <summary>
 		/// Метод обработки страницы отображения смен.
 		/// </summary>
-		/// <param name="dataAction">Действие, полученное со страницы.</param>
 		/// <returns>Страница отображения смен.</returns>
 		public IActionResult Index()
 		{
@@ -83,50 +86,17 @@
 			}
 
 			return RedirectToAction("Index");
-			static dynamic GetMonth(IEnumerable<ShiftTimeline> active, DateTime date) => new
-			{
-				shifts = active.GetShifts(date),
-				descriptions = active.GetShiftDescriptions(date).ToArray()
-			};
+			static List<DayShift> GetMonth(IEnumerable<ShiftTimeline> active, DateTime date) => active
+				.Where(x => x.TargetDate >= date && x.TargetDate <= date.AddMonths(1))
+				.GroupBy(x => x.TargetDate)
+				.Select(x => new DayShift { day = x.Key.Day, desc = x.Where(c=>c.TargetDate == x.Key).GetShiftDescription()})
+				.OrderBy(x=>x.day).ToList();
 		}
 
 		/// <summary>
 		/// Метод загрузки данных в таблицу Excel.
 		/// </summary>
-		/// <param name="before">Дата начала периода.</param>
-		/// <param name="after">Дата конца периода.</param>
-		/// <returns>Загружаемый файл.</returns>
-		public FileResult ExportShifts(DateRange range)
-		{
-			var path = Path.GetTempPath();
-			var tableName = $"LastShiftsExport.xlsx";
-			Sql.GetTimelines(range)
-				.OrderBy(x => x.TargetDate)
-				.ThenBy(x => x.Line)
-				.ThenBy(x => x.ShiftNumber)
-				.ToTable(true, "Shift timelines")
-				.AddColumn(x => x.TargetDate, "Target date", typeof(DateTime), "dd.MM.yyyy")
-				.AddColumn(x => x.Line == 1 ? "RF" : "WM", "Line", typeof(string))
-				.AddColumn(x => x.ShiftNumber, "Shift number", typeof(int))
-				.AddColumn(x => x.ShiftBegin, "Shift begin", typeof(DateTime), "dd.MM.yyyy HH:mm:ss")
-				.AddColumn(x => x.ShiftEnd, "Shift end", typeof(DateTime), "dd.MM.yyyy HH:mm:ss")
-				.AddColumn(x => x.LunchBegin, "Lunch begin", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.LunchEnd, "Lunch end", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.Break1Begin, "Break 1 begin", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.Break1End, "Break 1 end", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.Break2Begin, "Break 2 begin", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.Break2End, "Break 2 end", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.Break3Begin, "Break 3 begin", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.Break3End, "Break 3 end", typeof(DateTime), "HH:mm:ss")
-				.AddColumn(x => x.InsertUser, "Insert user", typeof(string))
-				.AddColumn(x => x.InsertTime, "Insert time", typeof(DateTime), "dd.MM.yyyy HH:mm:ss")
-				.GenerateTable(path, tableName);
-
-			var file = $"{path}\\{tableName}";
-			var bytes = System.IO.File.ReadAllBytes(file);
-			System.IO.File.Delete(file);
-			return File(bytes, "application/octet-stream", $"EXPORT SHIFTS {DateTime.Now:dd.MM.yyyy (HH.mm.ss)}.xlsx");
-		}
+		public FileResult ExportShifts(DateRange range) => File(range.GetExcelBytes(), "application/octet-stream", $"EXPORT SHIFTS {DateTime.Now:dd.MM.yyyy (HH.mm.ss)}.xlsx");
 
 		/// <summary>
 		/// Метод обработки страницы ошибок.
@@ -136,7 +106,8 @@
 		public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
 		#region jQueryHelper
-		public IEnumerable<TableRow> GetTimelines(DateRange range) => Sql.GetTimelines(range).GetTable(range);
+		public IEnumerable<TableRow> GetTimelines(DateRange range) => range.GetTable();
+		public IEnumerable<string> GetAllShortTemplates() => Sql.GetAllShortTemplates();
 
 		/// <summary>
 		/// Получение деталей определенного шаблона.
@@ -152,12 +123,6 @@
 		/// <param name="shiftNumber">Номер смены.</param>
 		/// <returns>Набор шаблонов по заданным параметрам.</returns>
 		public List<Descriptions> GetTemplates(int line, int shiftNumber) => Sql.GetTemplates(line, shiftNumber);
-
-		/// <summary>
-		/// Получение сокращенных шаблонов смен.
-		/// </summary>
-		/// <returns>Набор всех сокращенных шаблонов.</returns>
-		public IEnumerable<string> GetAllShortTemplates() => Sql.GetAllShortTemplates();
 
 		/// <summary>
 		/// Получение шаблонов смен.

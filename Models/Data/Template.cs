@@ -2,12 +2,12 @@
 {
 	public class Template
 	{
-		public string line { get; set; }
-		public int number { get; set; }
-		public string shift { get; set; }
-		public string lunch { get; set; }
-		public string break1 { get; set; }
-		public string break2 { get; set; }
-		public string break3 { get; set; }
+		public string Line { get; set; }
+		public int Number { get; set; }
+		public string Shift { get; set; }
+		public string Lunch { get; set; }
+		public string Break1 { get; set; }
+		public string Break2 { get; set; }
+		public string Break3 { get; set; }
 	}
 }

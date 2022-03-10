@@ -9,65 +9,29 @@
     <form>
         <div style="text-align: center; font-size: 25px; font-weight: bold">Editing the day.</div>
         <div style="font-size: 25px; font-weight: bold">
-            <input type="text" name="currentDate" value="@Model.Date.ToString("yyyy-MM-dd")" hidden />
             <u>@Model.Date.ToString("yyyy.MM.dd")</u>
         </div>
         <br />
         <div style="text-align: center; font-size: 25px; font-weight: bold">RF:</div>
         <br />
-        <table style="margin-left: auto; margin-right: auto; width: 100%; text-align: center">
-            <tr>
-                <th style="width:10%">Shift</th>
-                <th style="width:10%">Active</th>
-                <th style="width:10%">Template</th>
-                <th style="width:70%">Details</th>
-            </tr>
-            @{
-                for (var i = 1; i <= 3; i++)
-                {
-                    <tr style="border-top: 1px solid">
-                        <td>@i</td>
-                        <td>
-                            <input type="checkbox" onclick="Templates(this, @i, 1)" name="@string.Concat("rfactive", i)" id="@string.Concat("rfactive", i)" />
-                        </td>
-                        <td>
-                            <input type="text" id="@string.Concat("rftemplate" + i)" name="@string.Concat("rfshift" + i)" hidden />
-                            <select id="@string.Concat("rfschedules", i)" onchange="Details(this, @i, 1)" style="display: none"> </select>
-                        </td>
-                        <td id="@string.Concat("rfdescription", i)"></td>
-                    </tr>
-                }
-            }
+        <table style="margin-left: auto; margin-right: auto; width: 100%; text-align: center" id="rftable">
         </table>
         <br />
         <div style="text-align: center; font-size: 25px; font-weight: bold">WM:</div>
         <br />
-        <table style="margin-left: auto; margin-right: auto; width: 100%; text-align: center">
-            <tr>
-                <th style="width:10%">Shift</th>
-                <th style="width:10%">Active</th>
-                <th style="width:10%">Template</th>
-                <th style="width:70%">Details</th>
-            </tr>
-            @for (var i = 1; i <= 3; i++)
-            {
-                <tr style="border-top: 1px solid">
-                    <td>@i</td>
-                    <td>
-                        <input type="checkbox" onclick="Templates(this, @i, 2)" name="@string.Concat("wmactive", i)" id="@string.Concat("wmactive", i)" />
-                    </td>
-                    <td>
-                        <input type="text" id="@string.Concat("wmtemplate" + i)" name="@string.Concat("wmshift" + i)" hidden />
-                        <select id="@string.Concat("wmschedules", i)" onchange="Details(this, @i, 2)" style="display: none"> </select>
-                    </td>
-                    <td id="@string.Concat("wmdescription", i)"></td>
-                </tr>
-            }
+        <table style="margin-left: auto; margin-right: auto; width: 100%; text-align: center" id="wmtable">
         </table>
         <br />
         <div hidden>
+            <input type="text" id="rftemplate1" name="rfshift1" />
+            <input type="text" id="rftemplate2" name="rfshift2" />
+            <input type="text" id="rftemplate3" name="rfshift3" />
+            <input type="text" id="wmtemplate1" name="wmshift1" />
+            <input type="text" id="wmtemplate2" name="wmshift2" />
+            <input type="text" id="wmtemplate3" name="wmshift3" />
+
+            <input type="text" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" />
             <input type="submit" name="dataAction" value="Save" id="save" />
-            <input type="submit" name="dataAction" value="Cancel" id="cancel" />
         </div>
     </form>
     <table width="100%">
@@ -81,30 +45,8 @@
         </tr>
     </table>
     <br />
-    <div style="border: 1px solid; text-align: center; background: #f8ffff">
-        List of all templates
-        <button id="show" onclick="{ $('#show').hide(); $('#hide').show(); $('#alltemplates').show(); }" style="margin-left: 50px; width: 200px">Show</button>
-        <button id="hide" onclick="{ $('#show').show(); $('#hide').hide(); $('#alltemplates').hide(); }" style="margin-left: 50px; width: 200px; display: none">Hide</button>
-        <div id="alltemplates" style="display: none"> </div>
-    </div>
-    <script>
-        function Templates(e, i, nline) {
-            var line = nline == 1 ? 'rf' : 'wm';
-            ShowTemplates(e, `${line}schedules${i}`, '@Url.Action("GetTemplates")', nline);
-        }
-        function Details(e, i, nline) {
-            var line = nline == 1 ? 'rf' : 'wm';
-            ShowDetails(e, '@Url.Action("GetDetails")', $(`#${line}description${i}`));
-            $(`#${line}template${i}`).val(document.getElementById(`${line}schedules${i}`).value);
-        }
-    </script>
-    <script>
-        var rf = @Html.Raw(Json.Serialize(Model.RF));
-        var wm = @Html.Raw(Json.Serialize(Model.WM));
-
-        SetDay(rf, wm);
-
-        AllTemplatesTable("@Url.Action("GetAllTemplates")", '#alltemplates');
-    </script>
+    <partial name="TemplateList" />
+    <partial name="EditDayForms" />
+    <partial name="EditDayScripts" />
 </body>
 </html>

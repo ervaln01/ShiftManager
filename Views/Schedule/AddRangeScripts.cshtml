@@ -1,0 +1,33 @@
+﻿<script>
+    function Templates(e, i, nline) {
+        var line = nline == 1 ? 'rf' : 'wm';
+        ShowTemplates(e, `${line}schedules${i}`, '@Url.Action("GetTemplates")', nline);
+    }
+    function Details(e, i, nline) {
+        var line = nline == 1 ? 'rf' : 'wm';
+        ShowDetails(e, '@Url.Action("GetDetails")', $(`#${line}description${i}`));
+        $(`#${line}template${i}`).val(document.getElementById(`${line}schedules${i}`).value);
+    }
+    function ChangeDate() {
+        var month1 = @Html.Raw(Json.Serialize(ViewBag.Month1));
+        var month2 = @Html.Raw(Json.Serialize(ViewBag.Month2));
+        var month3 = @Html.Raw(Json.Serialize(ViewBag.Month3));
+        CreateCalendars(month1, month2, month3);
+    }
+    function BlockChangeDate() {
+        $('#rangeAfter')[0].min = $('#rangeBefore').val();
+        $('#rangeBefore')[0].max = $('#rangeAfter').val();
+    }
+</script>
+<script>
+    var before = @Html.Raw(Json.Serialize(ViewBag.Before.ToString("yyyy-MM-dd")));
+    var after = @Html.Raw(Json.Serialize(ViewBag.After.ToString("yyyy-MM-dd")));
+    $('#dateBefore').val(before);
+    $('#rangeBefore').val(before);
+    $('#dateAfter').val(after);
+    $('#rangeAfter').val(after);
+    $('#rangeBefore').change();
+    BlockChangeDate();
+    DrawTableShifts("#rftable", 'rf', 1)
+    DrawTableShifts("#wmtable", 'wm', 2)
+</script>

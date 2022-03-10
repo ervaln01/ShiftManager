@@ -1,0 +1,18 @@
+﻿<script>
+    function Templates(e, i, nline) {
+        var line = nline == 1 ? 'rf' : 'wm';
+        ShowTemplates(e, `${line}schedules${i}`, '@Url.Action("GetTemplates")', nline);
+    }
+    function Details(e, i, nline) {
+        var line = nline == 1 ? 'rf' : 'wm';
+        ShowDetails(e, '@Url.Action("GetDetails")', $(`#${line}description${i}`));
+        $(`#${line}template${i}`).val(document.getElementById(`${line}schedules${i}`).value);
+    }
+</script>
+<script>
+    var rf = @Html.Raw(Json.Serialize(Model.RF));
+    var wm = @Html.Raw(Json.Serialize(Model.WM));
+    DrawTableShifts("#rftable", 'rf', 1)
+    DrawTableShifts("#wmtable", 'wm', 2)
+    SetDay(rf, wm);
+</script>

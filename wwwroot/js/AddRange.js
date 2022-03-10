@@ -11,13 +11,12 @@
 
         if (days[index].classList.value.includes('sunday') && !sunday) continue;
         if (days[index].classList.value.includes('saturday') && !saturday) continue;
-
-        if (month.shifts.includes(Number(days[index].innerText))) {
+        var dayshift = month.filter(x => x.day == index+1);
+        if (dayshift.length != 0) {
             days[index].classList.add("with-shift");
-            var shiftIndex = month.shifts.indexOf(Number(days[index].innerText));
             var node = document.createElement("div");
             node.classList.add("ShiftComment");
-            node.innerText = month.descriptions[shiftIndex];
+            node.innerText = dayshift[0].desc;
             days[index].appendChild(node);
         }
         else

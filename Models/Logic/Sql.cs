@@ -60,15 +60,15 @@
 		public static IEnumerable<Template> GetAllTemplates()
 		{
 			using var context = new ApplicationContext();
-			return context.Templates.OrderBy(x => x.Line).ThenBy(x => x.ShiftBegin).Select(template => new Template()
+			return context.Templates.OrderBy(x => x.Line).ThenBy(x => x.ShiftNumber).Select(template => new Template()
 			{
-				line = template.Line == 1 ? "RF" : "WM",
-				number = template.ShiftNumber,
-				shift = $"{template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}",
-				lunch = $"{template.LunchBegin.GetTime()}-{template.LunchEnd.GetTime()}",
-				break1 = $"{template.Break1Begin.GetTime()}-{template.Break1End.GetTime()}",
-				break2 = $"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}",
-				break3 = $"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}",
+				Line = template.Line == 1 ? "RF" : "WM",
+				Number = template.ShiftNumber,
+				Shift = $"{template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}",
+				Lunch = $"{template.LunchBegin.GetTime()}-{template.LunchEnd.GetTime()}",
+				Break1 = $"{template.Break1Begin.GetTime()}-{template.Break1End.GetTime()}",
+				Break2 = $"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}",
+				Break3 = $"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}",
 			}).ToList();
 		}
 

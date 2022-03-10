@@ -31,38 +31,24 @@ function ShowDetails(e, url, context) {
     });
 }
 
-function AllTemplatesTable(url, id) {
-    $.ajax({
-        url: url,
-        success: (response) => {
-            var options = '';
-            $(id).text(options);
-            options += '<p />';
-            options += '<table style="width:100%">';
-            options += '<tr style="border-top: 1px solid;">';
-            options += '<th style="width:14.28%">LINE</th>';
-            options += '<th style="width:14.28%">SHIFT NUMBER</th>';
-            options += '<th style="width:14.28%">SHIFT</th>';
-            options += '<th style="width:14.28%">LUNCH</th>';
-            options += '<th style="width:14.28%">BREAK1</th>';
-            options += '<th style="width:14.28%">BREAK2</th>';
-            options += '<th style="width:14.28%">BREAK3</th>';
-            options += '</tr>';
-            for (var index = 0; index < response.length; index++) {
-                options += '<tr style="border-top: 1px solid;">';
-                options += `<td>${response[index].line}</td>`;
-                options += `<td>${response[index].number}</td>`;
-                options += `<td>${response[index].shift}</td>`;
-                options += `<td>${response[index].lunch}</td>`;
-                options += `<td>${response[index].break1}</td>`;
-                options += `<td>${response[index].break2}</td>`;
-                options += `<td>${response[index].break3}</td>`;
-                options += '</tr>';
-            }
-            options += '</table>';
-            $(id).append(options);
-        }
-    });
+function DrawTableShifts(id, line, nline) {
+    var options = '';
+    $(id).text(options);
+
+    options += `<tr><th style="width:10%">Shift</th><th style="width:10%">Active</th><th style="width:10%">Template</th><th style="width:70%">Details</th></tr>`;
+    for (var i = 1; i <= 3; i++) {
+        options += `<tr style="border-top: 1px solid">`
+        options += `<td>${i}</td>`
+        options += `<td>`
+        options += `<input type="checkbox" onclick="Templates(this, ${i}, ${nline})" name="${line}active${i}" id="${line}active${i}" />`
+        options += `</td>`
+        options += `<td>`
+        options += `<select id="${line}schedules${i}" onchange="Details(this, ${i}, ${nline})" style="display: none"> </select>`
+        options += `</td>`
+        options += `<td id="${line}description${i}"></td>`
+        options += `</tr >`
+    }
+    $(id).append(options);
 }
 
 function Save(url) {
