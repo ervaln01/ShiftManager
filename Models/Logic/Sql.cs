@@ -28,7 +28,7 @@
 		public static List<ShiftTimeline> GetTimelines(DateRange range)
 		{
 			using var context = new ApplicationContext();
-			return context.Timelines.Where(x => x.IsActive && x.TargetDate >= range.before && x.TargetDate <= range.after).ToList();
+			return context.Timelines.Where(x => x.IsActive && x.TargetDate >= range.Before && x.TargetDate <= range.After).ToList();
 		}
 
 		/// <summary>
@@ -37,7 +37,7 @@
 		/// <param name="line">Линия.</param>
 		/// <param name="shiftNumber">Номер смены.</param>
 		/// <returns>Набор шаблонов по заданным параметрам.</returns>
-		public static List<Descriptions> GetTemplates(int line, int shiftNumber)
+		public static List<Info> GetTemplates(int line, int shiftNumber)
 		{
 			using var context = new ApplicationContext();
 			return context.Templates.Where(x => x.Line == line && x.ShiftNumber == shiftNumber).GetTemplates();

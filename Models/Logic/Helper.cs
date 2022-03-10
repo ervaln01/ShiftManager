@@ -78,7 +78,7 @@
 		public static IEnumerable<TableRow> GetTable(this DateRange range)
 		{
 			var timelines = Sql.GetTimelines(range);
-			for (var date = range.before; date <= range.after; date = date.AddDays(1))
+			for (var date = range.Before; date <= range.After; date = date.AddDays(1))
 			{
 				var response = new TableRow(date);
 				var dayShifts = timelines.Where(x => x.TargetDate == date);
@@ -167,8 +167,8 @@
 		/// </summary>
 		/// <param name="templates">Последовательность шаблонов смен.</param>
 		/// <returns>Информация о шаблонах.</returns>
-		public static List<Descriptions> GetTemplates(this IEnumerable<ShiftTemplate> templates) =>
-			templates.Select(x => new Descriptions() { id = x.Id, description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" }).ToList();
+		public static List<Info> GetTemplates(this IEnumerable<ShiftTemplate> templates) =>
+			templates.Select(x => new Info() { Id = x.Id, Description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" }).ToList();
 
 		/// <summary>
 		/// Запись данных в БД.

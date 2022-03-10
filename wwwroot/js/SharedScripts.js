@@ -10,14 +10,12 @@ function DrawTemplates(line, shiftNumber, id, url) {
         url: url,
         data: { "line": line, "shiftNumber": shiftNumber },
         success: (response) => {
-            $(id).html('');
-            if (response.length > 0) {
-                let options = '<option value="Select">Select</option>'
-                for (let i = 0; i < response.length; i++) {
-                    options += `<option value="${response[i].id}">${response[i].description}</option>`;
-                }
-                $(id).append(options);
-            }
+            $(id).text('');
+            if (response.length == 0) return;
+
+            let options = '<option value="Select">Select</option>'
+            response.forEach(el => options += `<option value="${el.id}">${el.description}</option>`);
+            $(id).append(options);
         }
     });
 }

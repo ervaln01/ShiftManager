@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace ShiftManager.Models.Data
+﻿namespace ShiftManager.Models.Data
 {
+	using System;
+
 	public class DateRange
 	{
-		public DateTime before { get; set; }
-		public DateTime after { get; set; }
+		public DateTime Before { get; set; }
+		public DateTime After { get; set; }
 	}
 }

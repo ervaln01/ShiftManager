@@ -11,16 +11,17 @@
 
         if (days[index].classList.value.includes('sunday') && !sunday) continue;
         if (days[index].classList.value.includes('saturday') && !saturday) continue;
-        var dayshift = month.filter(x => x.day == index+1);
-        if (dayshift.length != 0) {
-            days[index].classList.add("with-shift");
-            var node = document.createElement("div");
-            node.classList.add("ShiftComment");
-            node.innerText = dayshift[0].desc;
-            days[index].appendChild(node);
-        }
-        else
+        var dayshift = month.filter(x => x.id == index + 1);
+        if (dayshift.length == 0) {
             days[index].classList.add("without-shift");
+            continue;
+        }
+
+        days[index].classList.add("with-shift");
+        var node = document.createElement("div");
+        node.classList.add("ShiftComment");
+        node.innerText = dayshift[0].description;
+        days[index].appendChild(node);
     }
 }
 
