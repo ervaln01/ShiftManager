@@ -13,10 +13,10 @@
 		/// </summary>
 		/// <param name="option">Выбранная опция.</param>
 		/// <returns>Детали шаблона.</returns>
-		public static string GetDetails(int option)
+		public static ShiftTemplate GetTemplate(int option)
 		{
 			using var context = new ApplicationContext();
-			return context.Templates.FirstOrDefault(x => x.Id == option).GetDetails();
+			return context.Templates.FirstOrDefault(x => x.Id == option);
 		}
 
 		public static List<ShiftTimeline> GetTimelines(DateTime currentDate)
@@ -37,39 +37,20 @@
 		/// <param name="line">Линия.</param>
 		/// <param name="shiftNumber">Номер смены.</param>
 		/// <returns>Набор шаблонов по заданным параметрам.</returns>
-		public static List<Info> GetTemplates(int line, int shiftNumber)
+		public static List<ShiftTemplate> GetTemplates(int line, int shiftNumber)
 		{
 			using var context = new ApplicationContext();
-			return context.Templates.Where(x => x.Line == line && x.ShiftNumber == shiftNumber).GetTemplates();
-		}
-
-		/// <summary>
-		/// Получение сокращенных шаблонов смен.
-		/// </summary>
-		/// <returns>Набор всех сокращенных шаблонов.</returns>
-		public static IEnumerable<string> GetAllShortTemplates()
-		{
-			using var context = new ApplicationContext();
-			return context.Templates.OrderBy(x => x.ShiftBegin).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}").Distinct().ToList();
+			return context.Templates.Where(x => x.Line == line && x.ShiftNumber == shiftNumber).ToList();
 		}
 
 		/// <summary>
 		/// Получение шаблонов смен.
 		/// </summary>
 		/// <returns>Набор всех шаблонов.</returns>
-		public static IEnumerable<Template> GetAllTemplates()
+		public static List<ShiftTemplate> GetAllTemplates()
 		{
 			using var context = new ApplicationContext();
-			return context.Templates.OrderBy(x => x.Line).ThenBy(x => x.ShiftNumber).Select(template => new Template()
-			{
-				Line = template.Line == 1 ? "RF" : "WM",
-				Number = template.ShiftNumber,
-				Shift = $"{template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}",
-				Lunch = $"{template.LunchBegin.GetTime()}-{template.LunchEnd.GetTime()}",
-				Break1 = $"{template.Break1Begin.GetTime()}-{template.Break1End.GetTime()}",
-				Break2 = $"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}",
-				Break3 = $"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}",
-			}).ToList();
+			return context.Templates.OrderBy(x => x.Line).ThenBy(x => x.ShiftNumber).ToList();
 		}
 
 		/// <summary>

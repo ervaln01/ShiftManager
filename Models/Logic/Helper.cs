@@ -19,42 +19,14 @@
 		/// </summary>
 		/// <param name="dateTime">Дата.</param>
 		/// <returns>Форматированная строка времени.</returns>
-		public static string GetTime(this DateTime? dateTime) => dateTime == null ? string.Empty : $"{dateTime.Value.Hour:D2}:{dateTime.Value.Minute:D2}";
+		private static string GetTime(this DateTime dateTime) => $"{dateTime.Hour:D2}:{dateTime.Minute:D2}";
 
 		/// <summary>
 		/// Получение форматированного времени.
 		/// </summary>
 		/// <param name="dateTime">Дата.</param>
 		/// <returns>Форматированная строка времени.</returns>
-		public static string GetTime(this DateTime dateTime) => $"{dateTime.Hour:D2}:{dateTime.Minute:D2}";
-
-		/// <summary>
-		/// Получение корректной даты.
-		/// </summary>
-		/// <param name="datetime">Дата.</param>
-		/// <param name="templateDate">Дата из шаблона.</param>
-		/// <returns>Корректная дата.</returns>
-		public static DateTime GetCorrectDate(this DateTime datetime, DateTime templateDate) =>
-			new DateTime(datetime.Year, datetime.Month, datetime.Day, templateDate.Hour, templateDate.Minute, 0).AddDays(templateDate.Day == 2 ? 1 : 0);
-
-		/// <summary>
-		/// Получение корректной даты.
-		/// </summary>
-		/// <param name="datetime">Дата.</param>
-		/// <param name="templateDate">Дата из шаблона.</param>
-		/// <returns>Корректная дата.</returns>
-		public static DateTime? GetCorrectDate(this DateTime datetime, DateTime? templateDate) => !templateDate.HasValue ?
-			null :
-			new DateTime(datetime.Year, datetime.Month, datetime.Day, templateDate.Value.Hour, templateDate.Value.Minute, 0).AddDays(templateDate.Value.Day == 2 ? 1 : 0);
-
-		/// <summary>
-		/// Получение дней со сменами на любой линии.
-		/// </summary>
-		/// <param name="active">Дни с активными сменами.</param>
-		/// <param name="date">Первый день месяца.</param>
-		/// <returns>Дни со сменами</returns>
-		public static int[] GetShifts(this IEnumerable<ShiftTimeline> active, DateTime date) =>
-			active.Where(x => x.TargetDate >= date && x.TargetDate < date.AddMonths(1)).Select(x => x.TargetDate.Day).Distinct().ToArray();
+		private static string GetTime(this DateTime? dateTime) => dateTime.HasValue ? GetTime(dateTime.Value) : string.Empty;
 
 		/// <summary>
 		/// Получение описаний смен на дни, где они заданы.
@@ -62,12 +34,18 @@
 		/// <param name="active">Дни с активными сменами.</param>
 		/// <param name="date">Первый день месяца.</param>
 		/// <returns>Набор описаний заданных смен.</returns>
-		public static string GetShiftDescription(this IEnumerable<ShiftTimeline> active)
+		private static string GetShiftDescription(this IEnumerable<ShiftTimeline> active)
 		{
 			var rf = $"{string.Join(" ", active.Where(x => x.Line == 1).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
 			var wm = $"{string.Join(" ", active.Where(x => x.Line == 2).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
 			return (!string.IsNullOrEmpty(rf) && !string.IsNullOrEmpty(wm)) ? $"RF {rf}\nWM {wm}" : !string.IsNullOrEmpty(rf) ? $"RF {rf}" : $"WM {wm}";
 		}
+
+		public static List<Info> GetMonth(IEnumerable<ShiftTimeline> active, DateTime dt1, DateTime dt2) => active
+			.Where(x => x.TargetDate >= dt1 && x.TargetDate < dt2)
+			.GroupBy(x => x.TargetDate)
+			.Select(x => new Info { Id = x.Key.Day, Description = x.Where(c => c.TargetDate == x.Key).GetShiftDescription() })
+			.OrderBy(x => x.Id).ToList();
 
 		/// <summary>
 		/// Формирование таблицы смен на заданный период.
@@ -75,7 +53,7 @@
 		/// <param name="timelines">Последовательность смен.</param>
 		/// <param name="range">Период дат.</param>
 		/// <returns>Последовательность динамически задаваемых строк таблицы.</returns>
-		public static IEnumerable<TableRow> GetTable(this DateRange range)
+		public static IEnumerable<TableRow> GetTable(DateRange range)
 		{
 			var timelines = Sql.GetTimelines(range);
 			for (var date = range.Before; date <= range.After; date = date.AddDays(1))
@@ -135,16 +113,19 @@
 		/// <param name="timelines">Последовательность смен на текущую дату.</param>
 		/// <param name="currentDate">Текущая дата.</param>
 		/// <returns>Строка таблицы отображения смен.</returns>
-		public static TableRow GetTargetDay(this IEnumerable<ShiftTimeline> timelines, DateTime currentDate)
+		public static TableRow GetTargetDay(DateTime currentDate)
 		{
+			var shiftTimelines = Sql.GetTimelines(currentDate);
+			if (!shiftTimelines.Any()) return new(currentDate);
+
 			var response = new TableRow(currentDate);
 
 			for (var shiftNumber = 1; shiftNumber <= 3; shiftNumber++)
 			{
-				var rf = timelines.FirstOrDefault(x => x.ShiftNumber == shiftNumber && x.Line == 1);
+				var rf = shiftTimelines.FirstOrDefault(x => x.ShiftNumber == shiftNumber && x.Line == 1);
 				if (rf != null) response.RF[shiftNumber - 1] = $"{rf.ShiftId}";
 
-				var wm = timelines.FirstOrDefault(x => x.ShiftNumber == shiftNumber && x.Line == 2);
+				var wm = shiftTimelines.FirstOrDefault(x => x.ShiftNumber == shiftNumber && x.Line == 2);
 				if (wm != null) response.WM[shiftNumber - 1] = $"{wm.ShiftId}";
 			}
 			return response;
@@ -155,57 +136,49 @@
 		/// </summary>
 		/// <param name="template">Шаблон.</param>
 		/// <returns>Развернутая информация текущего шаблона.</returns>
-		public static string GetDetails(this ShiftTemplate template) =>
-			$"Shift {template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}; " +
+		public static string GetDetails(int option)
+		{
+			var template = Sql.GetTemplate(option);
+			if (template == null) return string.Empty;
+			return $"Shift {template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}; " +
 			$"Lunch {template.LunchBegin.GetTime()}-{template.LunchEnd.GetTime()}; " +
 			$"Breaks {template.Break1Begin.GetTime()}-{template.Break1End.GetTime()}; " +
 			$"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}; " +
 			$"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}";
+		}
+		public static IEnumerable<Template> GetAllTemplates()
+		{
+			var shiftTemplates = Sql.GetAllTemplates();
+			if (!shiftTemplates.Any()) return new List<Template>();
+			return shiftTemplates.Select(template => new Template()
+			{
+				Line = template.Line == 1 ? "RF" : "WM",
+				Number = template.ShiftNumber,
+				Shift = $"{template.ShiftBegin.GetTime()}-{template.ShiftEnd.GetTime()}",
+				Lunch = $"{template.LunchBegin.GetTime()}-{template.LunchEnd.GetTime()}",
+				Break1 = $"{template.Break1Begin.GetTime()}-{template.Break1End.GetTime()}",
+				Break2 = $"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}",
+				Break3 = $"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}",
+			});
+		}
+
+		public static IEnumerable<string> GetAllShortTemplates()
+		{
+			var shiftTemplates = Sql.GetAllTemplates();
+			if (!shiftTemplates.Any()) return new List<string>();
+			return shiftTemplates.Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}").Distinct();
+		}
 
 		/// <summary>
 		/// Получения информации о шаблонах смен.
 		/// </summary>
 		/// <param name="templates">Последовательность шаблонов смен.</param>
 		/// <returns>Информация о шаблонах.</returns>
-		public static List<Info> GetTemplates(this IEnumerable<ShiftTemplate> templates) =>
-			templates.Select(x => new Info() { Id = x.Id, Description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" }).ToList();
-
-		/// <summary>
-		/// Запись данных в БД.
-		/// </summary>
-		/// <param name="timelines">Последовательность смен.</param>
-		/// <param name="user">Пользователь, добавивший данные.</param>
-		/// <param name="currentDate">Текущая дата.</param>
-		/// <param name="range">Диапазон дней?</param>
-		/// <param name="lastDate">Последняя дата диапазона.</param>
-		/// <param name="saturday">Задавать смены по субботам?</param>
-		/// <param name="sunday">Задавать смены по воскресеньям?</param>
-		public static void Save(this IEnumerable<ShiftTimeline> timelines, string user, DateTime currentDate,
-			DailyShifts shifts, bool range,
-			DateTime? lastDate = null, bool saturday = false, bool sunday = false)
+		public static IEnumerable<Info> GetTemplates(int line, int shiftNumber)
 		{
-			using var context = new ApplicationContext();
-			var RFShift = shifts.RFShift;
-			var WMShift = shifts.WMShift;
-			for (var index = 0; index < 3; index++)
-			{
-				if (shifts.RFActive[index] == null) RFShift[index] = null;
-				if (shifts.WMActive[index] == null) WMShift[index] = null;
-			}
-
-			foreach (var timeline in timelines)
-			{
-				timeline.IsActive = false;
-				context.Timelines.Update(timeline);
-			}
-
-			var dbinteraction = new TimelinesFormation(context);
-			var newTimelines = !range ?
-				dbinteraction.CreateTimelines(currentDate, RFShift, WMShift, DateTime.Now, user) :
-				dbinteraction.CreateTimelines(new DateTime[2] { currentDate, lastDate.Value }, saturday, sunday, RFShift, WMShift, DateTime.Now, user);
-
-			newTimelines.ForEach(item => context.Timelines.Add(item));
-			context.SaveChanges();
+			var shiftTemplate = Sql.GetTemplates(line, shiftNumber);
+			if (!shiftTemplate.Any()) return new List<Info>();
+			return shiftTemplate.Select(x => new Info() { Id = x.Id, Description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" });
 		}
 
 		/// <summary>

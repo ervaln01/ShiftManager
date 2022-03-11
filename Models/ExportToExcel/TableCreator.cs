@@ -21,7 +21,7 @@
 		/// <param name="showHeader">Флаг показа заголовка.</param>
 		/// <param name="sheetName">Название таблицы.</param>
 		/// <returns>Экземпляр таблицы.</returns>
-		public static Table<T> ToTable<T>(this IEnumerable<T> values, bool showHeader = true, string sheetName = null) => new Table<T>
+		public static Table<T> ToTable<T>(this IEnumerable<T> values, bool showHeader = true, string sheetName = null) => new()
 		{
 			DataSource = values,
 			ShowHeader = showHeader,

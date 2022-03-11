@@ -1,26 +1,70 @@
-﻿namespace ShiftManager.Models.Logic
+﻿using ShiftManager.Models.Data;
+using ShiftManager.Models.Entity;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace ShiftManager.Models.Logic
 {
-	using ShiftManager.Models.Entity;
-
-	using System;
-	using System.Collections.Generic;
-	using System.Linq;
-
-	/// <summary>
-	/// Класс, осуществляющий формирование смен.
-	/// </summary>
-	public class TimelinesFormation
+	public static class Saver
 	{
 		/// <summary>
-		/// Контекст базы данных.
+		/// Получение корректной даты.
 		/// </summary>
-		private readonly ApplicationContext _context;
+		/// <param name="datetime">Дата.</param>
+		/// <param name="templateDate">Дата из шаблона.</param>
+		/// <returns>Корректная дата.</returns>
+		private static DateTime? GetCorrectDate(this DateTime datetime, DateTime? templateDate) => !templateDate.HasValue ?
+			null :
+			new DateTime(datetime.Year, datetime.Month, datetime.Day, templateDate.Value.Hour, templateDate.Value.Minute, 0).AddDays(templateDate.Value.Day == 2 ? 1 : 0);
 
 		/// <summary>
-		/// Конструктор класса <see cref="TimelinesFormation"/>.
+		/// Получение корректной даты.
 		/// </summary>
-		/// <param name="context">Контекст базы данных.</param>
-		public TimelinesFormation(ApplicationContext context) => _context = context;
+		/// <param name="datetime">Дата.</param>
+		/// <param name="templateDate">Дата из шаблона.</param>
+		/// <returns>Корректная дата.</returns>
+		private static DateTime GetCorrectDate(this DateTime datetime, DateTime templateDate) =>
+			new DateTime(datetime.Year, datetime.Month, datetime.Day, templateDate.Hour, templateDate.Minute, 0).AddDays(templateDate.Day == 2 ? 1 : 0);
+
+		/// <summary>
+		/// Запись данных в БД.
+		/// </summary>
+		/// <param name="timelines">Последовательность смен.</param>
+		/// <param name="user">Пользователь, добавивший данные.</param>
+		/// <param name="currentDate">Текущая дата.</param>
+		/// <param name="range">Диапазон дней?</param>
+		/// <param name="lastDate">Последняя дата диапазона.</param>
+		/// <param name="saturday">Задавать смены по субботам?</param>
+		/// <param name="sunday">Задавать смены по воскресеньям?</param>
+		public static void Save(this IEnumerable<ShiftTimeline> timelines, string user, DateTime currentDate,
+			DailyShifts shifts, bool range,
+			DateTime? lastDate = null, bool saturday = false, bool sunday = false)
+		{
+			using var context = new ApplicationContext();
+			var RFShift = shifts.RFShift;
+			var WMShift = shifts.WMShift;
+			for (var index = 0; index < 3; index++)
+			{
+				if (shifts.RFActive[index] == null) RFShift[index] = null;
+				if (shifts.WMActive[index] == null) WMShift[index] = null;
+			}
+
+			foreach (var timeline in timelines)
+			{
+				timeline.IsActive = false;
+				context.Timelines.Update(timeline);
+			}
+
+			var newTimelines = !range ?
+				context.CreateTimelines(currentDate, RFShift, WMShift, DateTime.Now, user) :
+				context.CreateTimelines(new DateTime[2] { currentDate, lastDate.Value }, saturday, sunday, RFShift, WMShift, DateTime.Now, user);
+
+			newTimelines.ForEach(item => context.Timelines.Add(item));
+			context.SaveChanges();
+		}
+
 
 		/// <summary>
 		/// Создание набора смен на заданный диапазон.
@@ -33,12 +77,12 @@
 		/// <param name="now">Время добавления записи в БД.</param>
 		/// <param name="user">Пользователь, добавивший запись.</param>
 		/// <returns>Список всех смен на заданный период.</returns>
-		public List<ShiftTimeline> CreateTimelines(DateTime[] datetime, bool saturday, bool sunday, string[] rf, string[] wm, DateTime now, string user)
+		private static List<ShiftTimeline> CreateTimelines(this ApplicationContext context, DateTime[] datetime, bool saturday, bool sunday, string[] rf, string[] wm, DateTime now, string user)
 		{
 			var timeline = new List<ShiftTimeline>();
 			for (var day = datetime.First(); day <= datetime.Last(); day = day.AddDays(1))
 			{
-				timeline.AddRange(CreateTimelines(day, rf, wm, now, user));
+				timeline.AddRange(context.CreateTimelines(day, rf, wm, now, user));
 			}
 
 			if (!saturday)
@@ -65,7 +109,7 @@
 		/// <param name="now">Время добавления записи в БД.</param>
 		/// <param name="user">Пользователь, добавивший запись.</param>
 		/// <returns>Список всех смен на заданную дату.</returns>
-		public List<ShiftTimeline> CreateTimelines(DateTime datetime, string[] rf, string[] wm, DateTime now, string user)
+		private static List<ShiftTimeline> CreateTimelines(this ApplicationContext context, DateTime datetime, string[] rf, string[] wm, DateTime now, string user)
 		{
 			var list = new List<ShiftTimeline>();
 
@@ -82,7 +126,7 @@
 
 			ShiftTimeline FillTimeline(int id, int index, int line)
 			{
-				var template = _context.Templates.FirstOrDefault(x => x.Id == id);
+				var template = context.Templates.FirstOrDefault(x => x.Id == id);
 
 				var shiftTimeline = new ShiftTimeline
 				{

@@ -20,14 +20,7 @@
 		/// <summary>
 		/// Пользователь, работающий в данный момент.
 		/// </summary>
-		private string CurrentUser 
-		{ 
-			get 
-			{
-				var user = HttpContext.User.Identity.Name;
-				return string.IsNullOrEmpty(user) ? "unknown" : user.Split('\\').Last().ToUpper();
-			}
-		}
+		private string CurrentUser => (HttpContext.User.Identity.Name ?? "unknown").Split('\\').Last().ToUpper();
 
 		/// <summary>
 		/// Начало текущего месяца.
@@ -52,7 +45,7 @@
 		public IActionResult EditDay(DailyShifts shifts, DateTime date)
 		{
 			if (string.IsNullOrEmpty(shifts.dataAction)) 
-				return View(Sql.GetTimelines(date).GetTargetDay(date));
+				return View(Helper.GetTargetDay(date));
 
 			if (shifts.dataAction.Equals("Save"))
 				Sql.GetTimelines(date).Save(CurrentUser, date, shifts, false);
@@ -70,10 +63,10 @@
 			{
 				ViewBag.Before = DateTime.Today;
 				ViewBag.After = StartMonth.AddMonths(1).AddDays(-1);
-				var active = Sql.GetTimelines(new DateRange() { Before = StartMonth, After = StartMonth.AddMonths(2) });
-				ViewBag.Month1 = GetMonth(active, StartMonth);
-				ViewBag.Month2 = GetMonth(active, StartMonth.AddMonths(1));
-				ViewBag.Month3 = GetMonth(active, StartMonth.AddMonths(2));
+				var active = Sql.GetTimelines(new DateRange() { Before = StartMonth, After = StartMonth.AddMonths(3) });
+				ViewBag.Month1 = Helper.GetMonth(active, StartMonth, StartMonth.AddMonths(1));
+				ViewBag.Month2 = Helper.GetMonth(active, StartMonth.AddMonths(1), StartMonth.AddMonths(2));
+				ViewBag.Month3 = Helper.GetMonth(active, StartMonth.AddMonths(2), StartMonth.AddMonths(3));
 				return View();
 			}
 
@@ -81,11 +74,6 @@
 				Sql.GetTimelines(range).Save(CurrentUser, range.Before, shifts, true, range.After, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
 
 			return RedirectToAction("Index");
-			static List<Info> GetMonth(IEnumerable<ShiftTimeline> active, DateTime date) => active
-				.Where(x => x.TargetDate >= date && x.TargetDate <= date.AddMonths(1))
-				.GroupBy(x => x.TargetDate)
-				.Select(x => new Info { Id = x.Key.Day, Description = x.Where(c => c.TargetDate == x.Key).GetShiftDescription() })
-				.OrderBy(x => x.Id).ToList();
 		}
 
 		/// <summary>
@@ -101,17 +89,11 @@
 		public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
 		#region jQueryHelper
-		public IEnumerable<TableRow> GetTimelines(DateRange range) => range.GetTable();
-		public IEnumerable<string> GetAllShortTemplates() => Sql.GetAllShortTemplates();
-		public IEnumerable<Template> GetAllTemplates() => Sql.GetAllTemplates();
+		public IEnumerable<TableRow> GetTimelines(DateRange range) => Helper.GetTable(range);
+		public IEnumerable<string> GetAllShortTemplates() => Helper.GetAllShortTemplates();
+		public IEnumerable<Template> GetAllTemplates() => Helper.GetAllTemplates();
 
-
-		/// <summary>
-		/// Получение деталей определенного шаблона.
-		/// </summary>
-		/// <param name="option">Выбранная опция.</param>
-		/// <returns>Детали шаблона.</returns>
-		public string GetDetails(int option) => Sql.GetDetails(option);
+		public string GetDetails(int option) => Helper.GetDetails(option);
 
 		/// <summary>
 		/// Получение информации о шаблонах.
@@ -119,7 +101,7 @@
 		/// <param name="line">Линия.</param>
 		/// <param name="shiftNumber">Номер смены.</param>
 		/// <returns>Набор шаблонов по заданным параметрам.</returns>
-		public List<Info> GetTemplates(int line, int shiftNumber) => Sql.GetTemplates(line, shiftNumber);
+		public IEnumerable<Info> GetTemplates(int line, int shiftNumber) => Helper.GetTemplates(line, shiftNumber);
 
 		/// <summary>
 		/// Проверка корректности не пересечения смен.
