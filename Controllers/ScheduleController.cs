@@ -4,7 +4,6 @@
 
 	using ShiftManager.Models;
 	using ShiftManager.Models.Data;
-	using ShiftManager.Models.Entity;
 	using ShiftManager.Models.Logic;
 
 	using System;
@@ -48,7 +47,7 @@
 				return View(Helper.GetTargetDay(date));
 
 			if (shifts.dataAction.Equals("Save"))
-				Sql.GetTimelines(date).Save(CurrentUser, date, shifts, false);
+				Helper.GetTimelines(new() { Before = date, After = date }).Save(CurrentUser, date, shifts, false);
 
 			return RedirectToAction("Index");
 		}
@@ -63,7 +62,7 @@
 			{
 				ViewBag.Before = DateTime.Today;
 				ViewBag.After = StartMonth.AddMonths(1).AddDays(-1);
-				var active = Sql.GetTimelines(new DateRange() { Before = StartMonth, After = StartMonth.AddMonths(3) });
+				var active = Helper.GetTimelines(new DateRange() { Before = StartMonth, After = StartMonth.AddMonths(3) });
 				ViewBag.Month1 = Helper.GetMonth(active, StartMonth, StartMonth.AddMonths(1));
 				ViewBag.Month2 = Helper.GetMonth(active, StartMonth.AddMonths(1), StartMonth.AddMonths(2));
 				ViewBag.Month3 = Helper.GetMonth(active, StartMonth.AddMonths(2), StartMonth.AddMonths(3));
@@ -71,7 +70,7 @@
 			}
 
 			if (shifts.dataAction.Equals("Save"))
-				Sql.GetTimelines(range).Save(CurrentUser, range.Before, shifts, true, range.After, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
+				Helper.GetTimelines(range).Save(CurrentUser, range.Before, shifts, true, range.After, !string.IsNullOrEmpty(saturday), !string.IsNullOrEmpty(sunday));
 
 			return RedirectToAction("Index");
 		}
@@ -107,7 +106,7 @@
 		/// Проверка корректности не пересечения смен.
 		/// </summary>
 		/// <returns>Код корректности заданных шаблонов смен.</returns>
-		public dynamic VerifySchedules(VerifyModel model) => Sql.VerifySchedules(model);
+		public VerifyModel VerifySchedules(VerifyModel model) => Helper.VerifySchedules(model);
 		#endregion
 	}
 }

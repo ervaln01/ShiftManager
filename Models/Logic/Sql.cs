@@ -53,18 +53,45 @@
 			return context.Templates.OrderBy(x => x.Line).ThenBy(x => x.ShiftNumber).ToList();
 		}
 
+
 		/// <summary>
-		/// Проверка корректности не пересечения смен.
+		/// Получение кода корректности заданных смен.
 		/// </summary>
-		/// <returns>Код корректности заданных шаблонов смен.</returns>
-		public static dynamic VerifySchedules(VerifyModel model)
+		/// <param name="shift1">Шаблон первой смены.</param>
+		/// <param name="shift2">Шаблон второй смены.</param>
+		/// <param name="shift3">Шаблон третьей смены.</param>
+		/// <returns>Код корректности заданных смен.</returns>
+		public static int Verify(int shift1, int shift2, int shift3)
 		{
 			using var context = new ApplicationContext();
-			return new
+			var count = new int[3] { shift1, shift2, shift3 }.Count(x => x > 0);
+			if (count == 0 || count == 1) return 0;
+
+			if (count == 2)
 			{
-				rf = context.Verify(model.rf1, model.rf2, model.rf3),
-				wm = context.Verify(model.wm1, model.wm2, model.wm3)
-			};
+				if (shift3 == 0) return CorrectTemplates(shift1, shift2) ? 0 : 1;
+				if (shift2 == 0) return CorrectTemplates(shift1, shift3) ? 0 : 1;
+				if (shift1 == 0) return CorrectTemplates(shift2, shift3) ? 0 : 1;
+			}
+
+			if (count == 3)
+			{
+				var template1 = context.Templates.FirstOrDefault(x => x.Id == shift1);
+				var template2 = context.Templates.FirstOrDefault(x => x.Id == shift2);
+				var template3 = context.Templates.FirstOrDefault(x => x.Id == shift3);
+				return
+					template1.ShiftEnd == template2.ShiftBegin &&
+					template2.ShiftEnd == template3.ShiftBegin &&
+					template3.ShiftEnd == template1.ShiftBegin.AddDays(1) ? 0 : 1;
+			}
+			return 2;
+
+			bool CorrectTemplates(int id1, int id2)
+			{
+				var template1 = context.Templates.FirstOrDefault(x => x.Id == id1);
+				var template2 = context.Templates.FirstOrDefault(x => x.Id == id2);
+				return template1.ShiftEnd <= template2.ShiftBegin;
+			}
 		}
 	}
 }

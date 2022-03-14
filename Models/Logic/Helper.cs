@@ -14,33 +14,6 @@
 	/// </summary>
 	public static class Helper
 	{
-		/// <summary>
-		/// Получение форматированного времени.
-		/// </summary>
-		/// <param name="dateTime">Дата.</param>
-		/// <returns>Форматированная строка времени.</returns>
-		private static string GetTime(this DateTime dateTime) => $"{dateTime.Hour:D2}:{dateTime.Minute:D2}";
-
-		/// <summary>
-		/// Получение форматированного времени.
-		/// </summary>
-		/// <param name="dateTime">Дата.</param>
-		/// <returns>Форматированная строка времени.</returns>
-		private static string GetTime(this DateTime? dateTime) => dateTime.HasValue ? GetTime(dateTime.Value) : string.Empty;
-
-		/// <summary>
-		/// Получение описаний смен на дни, где они заданы.
-		/// </summary>
-		/// <param name="active">Дни с активными сменами.</param>
-		/// <param name="date">Первый день месяца.</param>
-		/// <returns>Набор описаний заданных смен.</returns>
-		private static string GetShiftDescription(this IEnumerable<ShiftTimeline> active)
-		{
-			var rf = $"{string.Join(" ", active.Where(x => x.Line == 1).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
-			var wm = $"{string.Join(" ", active.Where(x => x.Line == 2).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
-			return (!string.IsNullOrEmpty(rf) && !string.IsNullOrEmpty(wm)) ? $"RF {rf}\nWM {wm}" : !string.IsNullOrEmpty(rf) ? $"RF {rf}" : $"WM {wm}";
-		}
-
 		public static List<Info> GetMonth(IEnumerable<ShiftTimeline> active, DateTime dt1, DateTime dt2) => active
 			.Where(x => x.TargetDate >= dt1 && x.TargetDate < dt2)
 			.GroupBy(x => x.TargetDate)
@@ -74,6 +47,8 @@
 				yield return response;
 			}
 		}
+
+		public static List<ShiftTimeline> GetTimelines(DateRange range) => Sql.GetTimelines(range);
 
 		public static byte[] GetExcelBytes(this DateRange range)
 		{
@@ -181,44 +156,43 @@
 			return shiftTemplate.Select(x => new Info() { Id = x.Id, Description = $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}" });
 		}
 
+
 		/// <summary>
-		/// Получение кода корректности заданных смен.
+		/// Проверка корректности не пересечения смен.
 		/// </summary>
-		/// <param name="context">Контекст базы данных.</param>
-		/// <param name="shift1">Шаблон первой смены.</param>
-		/// <param name="shift2">Шаблон второй смены.</param>
-		/// <param name="shift3">Шаблон третьей смены.</param>
-		/// <returns>Код корректности заданных смен.</returns>
-		public static int Verify(this ApplicationContext context, int shift1, int shift2, int shift3)
+		/// <returns>Код корректности заданных шаблонов смен.</returns>
+		public static VerifyModel VerifySchedules(VerifyModel model)
 		{
-			var count = new int[3] { shift1, shift2, shift3 }.Count(x => x > 0);
-			if (count == 0 || count == 1) return 0;
+			model.rf = Sql.Verify(model.rf1, model.rf2, model.rf3);
+			model.wm = Sql.Verify(model.wm1, model.wm2, model.wm3);
+			return model;
+		}
 
-			if (count == 2)
-			{
-				if (shift3 == 0) return CorrectTemplates(shift1, shift2) ? 0 : 1;
-				if (shift2 == 0) return CorrectTemplates(shift1, shift3) ? 0 : 1;
-				if (shift1 == 0) return CorrectTemplates(shift2, shift3) ? 0 : 1;
-			}
+		/// <summary>
+		/// Получение форматированного времени.
+		/// </summary>
+		/// <param name="dateTime">Дата.</param>
+		/// <returns>Форматированная строка времени.</returns>
+		private static string GetTime(this DateTime dateTime) => $"{dateTime.Hour:D2}:{dateTime.Minute:D2}";
 
-			if (count == 3)
-			{
-				var template1 = context.Templates.FirstOrDefault(x => x.Id == shift1);
-				var template2 = context.Templates.FirstOrDefault(x => x.Id == shift2);
-				var template3 = context.Templates.FirstOrDefault(x => x.Id == shift3);
-				return
-					template1.ShiftEnd == template2.ShiftBegin &&
-					template2.ShiftEnd == template3.ShiftBegin &&
-					template3.ShiftEnd == template1.ShiftBegin.AddDays(1) ? 0 : 1;
-			}
-			return 2;
+		/// <summary>
+		/// Получение форматированного времени.
+		/// </summary>
+		/// <param name="dateTime">Дата.</param>
+		/// <returns>Форматированная строка времени.</returns>
+		private static string GetTime(this DateTime? dateTime) => dateTime.HasValue ? GetTime(dateTime.Value) : string.Empty;
 
-			bool CorrectTemplates(int id1, int id2)
-			{
-				var template1 = context.Templates.FirstOrDefault(x => x.Id == id1);
-				var template2 = context.Templates.FirstOrDefault(x => x.Id == id2);
-				return template1.ShiftEnd <= template2.ShiftBegin;
-			}
+		/// <summary>
+		/// Получение описаний смен на дни, где они заданы.
+		/// </summary>
+		/// <param name="active">Дни с активными сменами.</param>
+		/// <param name="date">Первый день месяца.</param>
+		/// <returns>Набор описаний заданных смен.</returns>
+		private static string GetShiftDescription(this IEnumerable<ShiftTimeline> active)
+		{
+			var rf = $"{string.Join(" ", active.Where(x => x.Line == 1).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
+			var wm = $"{string.Join(" ", active.Where(x => x.Line == 2).Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}"))}";
+			return (!string.IsNullOrEmpty(rf) && !string.IsNullOrEmpty(wm)) ? $"RF {rf}\nWM {wm}" : !string.IsNullOrEmpty(rf) ? $"RF {rf}" : $"WM {wm}";
 		}
 	}
 }

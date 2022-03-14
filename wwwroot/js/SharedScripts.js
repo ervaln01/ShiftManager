@@ -1,8 +1,13 @@
 ﻿function ShowTemplates(e, id, url, line) {
     document.getElementById(id).style.display = e.checked ? 'inline-block' : 'none';
 
-    if (e.checked) DrawTemplates(line, id.slice(-1), "#" + id, url);
-    else $('#' + (line == 1 ? "rf" : "wm") + 'description' + id.slice(-1)).text('');
+    if (e.checked) {
+        DrawTemplates(line, id.slice(-1), "#" + id, url);
+        return;
+    }
+
+    $('#' + (line == 1 ? "rf" : "wm") + 'schedules' + id.slice(-1)).val(0);
+    $('#' + (line == 1 ? "rf" : "wm") + 'description' + id.slice(-1)).text('');
 }
 
 function DrawTemplates(line, shiftNumber, id, url) {
@@ -11,8 +16,6 @@ function DrawTemplates(line, shiftNumber, id, url) {
         data: { "line": line, "shiftNumber": shiftNumber },
         success: (response) => {
             $(id).text('');
-            if (response.length == 0) return;
-
             let options = '<option value="Select">Select</option>'
             response.forEach(el => options += `<option value="${el.id}">${el.description}</option>`);
             $(id).append(options);
@@ -21,8 +24,12 @@ function DrawTemplates(line, shiftNumber, id, url) {
 }
 
 function ShowDetails(e, url, context) {
-    if (e.value === 'Select') context.text('');
-    else $.ajax({
+    if (e.value === 'Select') {
+        context.text('');
+        return;
+    }
+
+    $.ajax({
         url: url,
         data: { "option": e.value },
         success: (response) => context.text(response)

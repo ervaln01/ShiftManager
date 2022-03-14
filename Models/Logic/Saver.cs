@@ -1,12 +1,11 @@
-﻿using ShiftManager.Models.Data;
-using ShiftManager.Models.Entity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace ShiftManager.Models.Logic
+﻿namespace ShiftManager.Models.Logic
 {
+	using ShiftManager.Models.Data;
+	using ShiftManager.Models.Entity;
+	using System;
+	using System.Collections.Generic;
+	using System.Linq;
+
 	public static class Saver
 	{
 		/// <summary>
@@ -15,9 +14,7 @@ namespace ShiftManager.Models.Logic
 		/// <param name="datetime">Дата.</param>
 		/// <param name="templateDate">Дата из шаблона.</param>
 		/// <returns>Корректная дата.</returns>
-		private static DateTime? GetCorrectDate(this DateTime datetime, DateTime? templateDate) => !templateDate.HasValue ?
-			null :
-			new DateTime(datetime.Year, datetime.Month, datetime.Day, templateDate.Value.Hour, templateDate.Value.Minute, 0).AddDays(templateDate.Value.Day == 2 ? 1 : 0);
+		private static DateTime? GetCorrectDate(this DateTime datetime, DateTime? templateDate) => templateDate.HasValue ? GetCorrectDate(datetime, templateDate.Value) : null;
 
 		/// <summary>
 		/// Получение корректной даты.
@@ -58,18 +55,17 @@ namespace ShiftManager.Models.Logic
 			}
 
 			var newTimelines = !range ?
-				context.CreateTimelines(currentDate, RFShift, WMShift, DateTime.Now, user) :
-				context.CreateTimelines(new DateTime[2] { currentDate, lastDate.Value }, saturday, sunday, RFShift, WMShift, DateTime.Now, user);
+				CreateTimelines(currentDate, RFShift, WMShift, DateTime.Now, user) :
+				CreateTimelines(new () { Before = currentDate, After = lastDate.Value }, saturday, sunday, RFShift, WMShift, DateTime.Now, user);
 
 			newTimelines.ForEach(item => context.Timelines.Add(item));
 			context.SaveChanges();
 		}
 
-
 		/// <summary>
 		/// Создание набора смен на заданный диапазон.
 		/// </summary>
-		/// <param name="datetime">Временной диапазон.</param>
+		/// <param name="range">Временной диапазон.</param>
 		/// <param name="saturday">Заполнять субботу?</param>
 		/// <param name="sunday">Заполнять воскресенье?</param>
 		/// <param name="rf">Набор шаблонов смен на линии холодильников.</param>
@@ -77,12 +73,12 @@ namespace ShiftManager.Models.Logic
 		/// <param name="now">Время добавления записи в БД.</param>
 		/// <param name="user">Пользователь, добавивший запись.</param>
 		/// <returns>Список всех смен на заданный период.</returns>
-		private static List<ShiftTimeline> CreateTimelines(this ApplicationContext context, DateTime[] datetime, bool saturday, bool sunday, string[] rf, string[] wm, DateTime now, string user)
+		private static List<ShiftTimeline> CreateTimelines(DateRange range, bool saturday, bool sunday, string[] rf, string[] wm, DateTime now, string user)
 		{
 			var timeline = new List<ShiftTimeline>();
-			for (var day = datetime.First(); day <= datetime.Last(); day = day.AddDays(1))
+			for (var day = range.Before; day <= range.After; day = day.AddDays(1))
 			{
-				timeline.AddRange(context.CreateTimelines(day, rf, wm, now, user));
+				timeline.AddRange(CreateTimelines(day, rf, wm, now, user));
 			}
 
 			if (!saturday)
@@ -109,23 +105,14 @@ namespace ShiftManager.Models.Logic
 		/// <param name="now">Время добавления записи в БД.</param>
 		/// <param name="user">Пользователь, добавивший запись.</param>
 		/// <returns>Список всех смен на заданную дату.</returns>
-		private static List<ShiftTimeline> CreateTimelines(this ApplicationContext context, DateTime datetime, string[] rf, string[] wm, DateTime now, string user)
+		private static List<ShiftTimeline> CreateTimelines(DateTime datetime, string[] rf, string[] wm, DateTime now, string user)
 		{
-			var list = new List<ShiftTimeline>();
-
-			for (var index = 0; index < 3; index++)
+			return GetShifts(rf, 1).Union(GetShifts(wm, 2)).ToList();
+			List<ShiftTimeline> GetShifts(string[] arr, int index) => arr.Where(x => x != null && !x.Equals("Select")).Select((x, i) => FillTimeline(int.Parse(x), i + 1, index)).ToList();
+			ShiftTimeline FillTimeline(int id, int shift, int line)
 			{
-				if (rf[index] != null && !rf[index].Equals("Select"))
-					list.Add(FillTimeline(int.Parse(rf[index]), index, 1));
+				using var context = new ApplicationContext();
 
-				if (wm[index] != null && !wm[index].Equals("Select"))
-					list.Add(FillTimeline(int.Parse(wm[index]), index, 2));
-			}
-
-			return list;
-
-			ShiftTimeline FillTimeline(int id, int index, int line)
-			{
 				var template = context.Templates.FirstOrDefault(x => x.Id == id);
 
 				var shiftTimeline = new ShiftTimeline
@@ -135,7 +122,7 @@ namespace ShiftManager.Models.Logic
 					InsertUser = user,
 					IsActive = true,
 					Line = line,
-					ShiftNumber = index + 1,
+					ShiftNumber = shift,
 					ShiftId = id,
 					ShiftBegin = datetime.GetCorrectDate(template.ShiftBegin),
 					ShiftEnd = datetime.GetCorrectDate(template.ShiftEnd),

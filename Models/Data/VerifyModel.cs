@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace ShiftManager.Models.Data
+﻿namespace ShiftManager.Models.Data
 {
 	public class VerifyModel
 	{
+		public int rf { get; set; }
+		public int wm { get; set; }
 		public int rf1 { get; set; }
 		public int rf2 { get; set; }
 		public int rf3 { get; set; }
