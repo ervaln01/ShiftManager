@@ -56,7 +56,7 @@
 
 			var newTimelines = !range ?
 				CreateTimelines(currentDate, RFShift, WMShift, DateTime.Now, user) :
-				CreateTimelines(new () { Before = currentDate, After = lastDate.Value }, saturday, sunday, RFShift, WMShift, DateTime.Now, user);
+				CreateTimelines(new (currentDate, lastDate.Value), saturday, sunday, RFShift, WMShift, DateTime.Now, user);
 
 			newTimelines.ForEach(item => context.Timelines.Add(item));
 			context.SaveChanges();

@@ -16,10 +16,10 @@
 		public string wmshift3 { get; set; }
 		public string wmactive3 { get; set; }
 
-		public string[] RFShift { get => new string[3] { rfshift1, rfshift2, rfshift3 }; }
-		public string[] WMShift { get => new string[3] { wmshift1, wmshift2, wmshift3 }; }
-		public string[] RFActive { get => new string[3] { rfactive1, rfactive2, rfactive3 }; }
-		public string[] WMActive { get => new string[3] { wmactive1, wmactive2, wmactive3 }; }
+		public string[] RFShift => new string[3] { rfshift1, rfshift2, rfshift3 };
+		public string[] WMShift => new string[3] { wmshift1, wmshift2, wmshift3 };
+		public string[] RFActive => new string[3] { rfactive1, rfactive2, rfactive3 };
+		public string[] WMActive => new string[3] { wmactive1, wmactive2, wmactive3 };
 
 	}
 }

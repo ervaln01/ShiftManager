@@ -3,6 +3,6 @@
     var after = @Html.Raw(Json.Serialize(ViewBag.After.ToString("yyyy-MM-dd")));
     $('#before').val(before);
     $('#after').val(after);
-    ChangeDate('@Url.Action("GetTimelines")');
+    ChangeDate('@Url.Action("GetTable")');
     SetColorLegend('#colorLegend', "@Url.Action("GetAllShortTemplates")");
 </script>

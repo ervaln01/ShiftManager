@@ -19,12 +19,6 @@
 			return context.Templates.FirstOrDefault(x => x.Id == option);
 		}
 
-		public static List<ShiftTimeline> GetTimelines(DateTime currentDate)
-		{
-			using var context = new ApplicationContext();
-			return context.Timelines.Where(x => x.IsActive && x.TargetDate == currentDate).ToList();
-		}
-
 		public static List<ShiftTimeline> GetTimelines(DateRange range)
 		{
 			using var context = new ApplicationContext();
@@ -47,7 +41,7 @@
 		/// Получение шаблонов смен.
 		/// </summary>
 		/// <returns>Набор всех шаблонов.</returns>
-		public static List<ShiftTemplate> GetAllTemplates()
+		public static List<ShiftTemplate> GetTemplates()
 		{
 			using var context = new ApplicationContext();
 			return context.Templates.OrderBy(x => x.Line).ThenBy(x => x.ShiftNumber).ToList();

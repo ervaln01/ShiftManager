@@ -85,12 +85,11 @@
 		/// <summary>
 		/// Получение строки таблицы отображения смен.
 		/// </summary>
-		/// <param name="timelines">Последовательность смен на текущую дату.</param>
 		/// <param name="currentDate">Текущая дата.</param>
 		/// <returns>Строка таблицы отображения смен.</returns>
 		public static TableRow GetTargetDay(DateTime currentDate)
 		{
-			var shiftTimelines = Sql.GetTimelines(currentDate);
+			var shiftTimelines = Sql.GetTimelines(new(currentDate));
 			if (!shiftTimelines.Any()) return new(currentDate);
 
 			var response = new TableRow(currentDate);
@@ -121,9 +120,10 @@
 			$"{template.Break2Begin.GetTime()}-{template.Break2End.GetTime()}; " +
 			$"{template.Break3Begin.GetTime()}-{template.Break3End.GetTime()}";
 		}
+
 		public static IEnumerable<Template> GetAllTemplates()
 		{
-			var shiftTemplates = Sql.GetAllTemplates();
+			var shiftTemplates = Sql.GetTemplates();
 			if (!shiftTemplates.Any()) return new List<Template>();
 			return shiftTemplates.Select(template => new Template()
 			{
@@ -139,7 +139,7 @@
 
 		public static IEnumerable<string> GetAllShortTemplates()
 		{
-			var shiftTemplates = Sql.GetAllTemplates();
+			var shiftTemplates = Sql.GetTemplates();
 			if (!shiftTemplates.Any()) return new List<string>();
 			return shiftTemplates.Select(x => $"{x.ShiftBegin.GetTime()}-{x.ShiftEnd.GetTime()}").Distinct();
 		}

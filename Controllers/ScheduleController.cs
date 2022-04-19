@@ -47,7 +47,7 @@
 				return View(Helper.GetTargetDay(date));
 
 			if (shifts.dataAction.Equals("Save"))
-				Helper.GetTimelines(new() { Before = date, After = date }).Save(CurrentUser, date, shifts, false);
+				Helper.GetTimelines(new(date)).Save(CurrentUser, date, shifts, false);
 
 			return RedirectToAction("Index");
 		}
@@ -62,7 +62,7 @@
 			{
 				ViewBag.Before = DateTime.Today;
 				ViewBag.After = StartMonth.AddMonths(1).AddDays(-1);
-				var active = Helper.GetTimelines(new DateRange() { Before = StartMonth, After = StartMonth.AddMonths(3) });
+				var active = Helper.GetTimelines(new (StartMonth, StartMonth.AddMonths(3)));
 				ViewBag.Month1 = Helper.GetMonth(active, StartMonth, StartMonth.AddMonths(1));
 				ViewBag.Month2 = Helper.GetMonth(active, StartMonth.AddMonths(1), StartMonth.AddMonths(2));
 				ViewBag.Month3 = Helper.GetMonth(active, StartMonth.AddMonths(2), StartMonth.AddMonths(3));
@@ -88,7 +88,7 @@
 		public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
 		#region jQueryHelper
-		public IEnumerable<TableRow> GetTimelines(DateRange range) => Helper.GetTable(range);
+		public IEnumerable<TableRow> GetTable(DateRange range) => Helper.GetTable(range);
 		public IEnumerable<string> GetAllShortTemplates() => Helper.GetAllShortTemplates();
 		public IEnumerable<Template> GetAllTemplates() => Helper.GetAllTemplates();
 
